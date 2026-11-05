@@ -56,3 +56,11 @@ go run ./cmd/palverify trace -data /path/to/PAL98 -encoding gbk -route /path/to/
 trace 会检查实际消息 ID 序列是否与预期完全相同；缺输入、剩余输入、未知指令、消息越界、步数/调用深度/文本总量超限或预期不符都会返回非零。若有执行前缀，报告仍保存其 PC、opcode、操作数、输入消费、返回入口和 blocker，便于记录问题。读取数据、解析路线等前置失败仅返回错误，不产生伪造轨迹。
 
 报告的 `script_stopped` / `completed` 只说明单次已建模触发脚本停止；所有报告都保留 `full_game_verified: false`。当前没有场景移动、逐帧自动脚本、现金/背包/装备状态、触发入口持久化、原版存档或真实主支线驱动；等待 opcode 0x0009 等依赖世界更新的指令不会被悄悄跳过。这些能力补齐后才能进行真实连续流程验收，详见 [验收标准](WIN98_VALIDATION.md) 和 [缺陷队列](BUGS.md)。
+
+## APK 数据源初筛
+
+```sh
+go run ./cmd/palverify apk -file /path/to/game.apk -out reports/apk.json
+```
+
+只做归档元数据及 SHA-256 检查：有界读取中央目录，不解压成员、不安装、不启动、不访问 APK 服务。识别 Git LFS 指针与真实文件的区别，列出原生库和四个 PAL 数据文件的名字候选。即便名字齐全，`windows_data_validated` 仍为 false，必须再经过真实数据格式校验。当前用户 APK 的静态身份与 PAL98 不一致；用户已明确继续 PAL98 目标。

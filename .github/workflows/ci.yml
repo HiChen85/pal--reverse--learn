@@ -15,6 +15,7 @@ jobs:
           cache: true
       - run: go test -race ./...
       - run: go vet ./...
+      - run: python3 -m unittest discover -s tools/apk -p 'test_*.py' -v
       - run: go run ./cmd/paltool demo
   build:
     strategy:

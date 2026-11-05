@@ -65,7 +65,8 @@ func main() {
 	}
 }
 func help(w io.Writer) {
-	fmt.Fprintln(w, `palverify inspect -data <目录> -encoding <big5|gbk> [-out reports/import.json]
+	fmt.Fprintln(w, `palverify apk -file <APK路径> [-out reports/apk.json]
+palverify inspect -data <目录> -encoding <big5|gbk> [-out reports/import.json]
 palverify audit   -data <目录> -encoding <big5|gbk> [-entry <脚本索引>] [-out reports/audit.json]
 palverify trace   -data <目录> -encoding <big5|gbk> -route <路线.json> [-include-text] [-out reports/trace.json]
 
@@ -84,6 +85,9 @@ func run(args []string, out, errout io.Writer) error {
 		return nil
 	}
 	mode := args[0]
+	if mode == "apk" {
+		return runAPK(args[1:], out, errout)
+	}
 	if mode != "inspect" && mode != "audit" && mode != "trace" {
 		return fmt.Errorf("未知命令 %q", mode)
 	}
