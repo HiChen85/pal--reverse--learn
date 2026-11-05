@@ -10,3 +10,4 @@ build:
 	mkdir -p bin
 	go build -o bin/palstudio ./cmd/palstudio
 	go build -o bin/paltool ./cmd/paltool
+	go build -o bin/palverify ./cmd/palverify

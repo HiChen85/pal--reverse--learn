@@ -67,6 +67,12 @@ go run ./cmd/paltool mkf /path/to/your/data.mkf
 
 `play` 支持交互式分支选择、战斗和进度存取，用 `help` 查看命令。MKF 工具只列目录和块长度，不解压、执行或改写文件；已对目录规模、偏移和读取大小设限。测试使用合成数据，未对真实原版数据作兼容性承诺。
 
+## Windows 98 柔情篇全流程适配进度
+
+已确认后续目标为 Windows 98 柔情篇。新增 `palverify`：只读读取场景/事件/对象/脚本/对话、固定文件摘要、静态 opcode 审计和带显式选择输入的部分触发脚本记录。合成测试已通过，**尚未提供真实目标数据，原版主线和支线未验证**；等待、移动、自动脚本和支线状态仍需补齐，不能把扫描完成当成通关。
+
+使用方法见 [palverify 工具](docs/PALVERIFY.md)，验收标准见 [主支线验证](docs/WIN98_VALIDATION.md)，待处理问题见 [BUGS](docs/BUGS.md)。GitHub 上传授权步骤见 [连接授权说明](docs/GITHUB_AUTH.md)。
+
 ## 界面预览
 
 以下为 MyGo 原生无窗口渲染截图；尚未实测真实桌面窗口。

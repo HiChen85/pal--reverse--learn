@@ -40,3 +40,12 @@ go.work.sum
 *.MKF
 /assets/original/
 /.cache/
+
+# Original data and local validation evidence (may contain game dialogue)
+*.msg
+*.MSG
+*.dat
+*.DAT
+/reports/
+/.local/
+*.trace.json

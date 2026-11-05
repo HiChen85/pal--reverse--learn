@@ -33,7 +33,8 @@ paltool play [pack.json]
 
 play 命令: next | choose <从1起的选项编号> | attack [敌方编号] | skill [敌方编号]
           defend | item <物品ID> [队员编号] | retry | save <文件> | load <文件> | quit
-所有战斗结算均在 Go 中执行。demo 自动运行原创示例，不读取原版素材。`)
+所有战斗结算均在 Go 中执行。demo 自动运行原创示例，不读取原版素材。
+Windows 98 原版资源审计和触发脚本记录：go run ./cmd/palverify help`)
 }
 func run(args []string, input io.Reader, out io.Writer) error {
 	if len(args) == 0 {
