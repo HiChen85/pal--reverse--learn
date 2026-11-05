@@ -31,3 +31,12 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# PAL studio workspace
+/bin/
+/dist/
+*.sav.json
+*.mkf
+*.MKF
+/assets/original/
+/.cache/
