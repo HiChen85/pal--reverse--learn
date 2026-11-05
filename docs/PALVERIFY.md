@@ -63,4 +63,4 @@ trace 会检查实际消息 ID 序列是否与预期完全相同；缺输入、�
 go run ./cmd/palverify apk -file /path/to/game.apk -out reports/apk.json
 ```
 
-只做归档元数据及 SHA-256 检查：有界读取中央目录，不解压成员、不安装、不启动、不访问 APK 服务。识别 Git LFS 指针与真实文件的区别，列出原生库和四个 PAL 数据文件的名字候选。即便名字齐全，`windows_data_validated` 仍为 false，必须再经过真实数据格式校验。当前用户 APK 的静态身份与 PAL98 不一致；用户已明确继续 PAL98 目标。
+只做归档元数据及 SHA-256 检查：有界读取中央目录，不解压成员、不安装、不启动、不访问 APK 服务。识别 Git LFS 指针与真实文件的区别，列出原生库和四个 PAL 数据文件的名字候选。即便名字齐全，`windows_data_validated` 仍为 false，必须再经过真实数据格式校验。目标继续保持 PAL1 / Windows 98 柔情篇。

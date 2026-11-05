@@ -73,17 +73,13 @@ go run ./cmd/paltool mkf /path/to/your/data.mkf
 
 使用方法见 [palverify 工具](docs/PALVERIFY.md)，验收标准见 [主支线验证](docs/WIN98_VALIDATION.md)，待处理问题见 [BUGS](docs/BUGS.md)。GitHub 上传授权步骤见 [连接授权说明](docs/GITHUB_AUTH.md)。
 
-## 仓库 APK 的识别结论
-
-主分支上传的 `xjqxc98rqb_344982.apk` 是腾讯《仙剑奇侠传 官方手游》`com.tencent.xjcard`，版本 `1.1.79`，并非此前选定的 Windows 98 柔情篇资源。用户已确认继续 PAL1／Windows 98 目标，后续另行提供对应资源。APK SHA-256 和静态证据见 [APK 分析](docs/APK_ANALYSIS.md)、[资源抽样](docs/APK_CONTENTS.md) 和 [目录报告](docs/APK_INVENTORY.json)。
-
-新增元数据检查命令，不安装或运行 APK：
+## APK 数据源初筛
 
 ```sh
 go run ./cmd/palverify apk -file /path/to/game.apk
 ```
 
-仓库 APK 使用 Git LFS；134 字节的指针文件不是实际 APK，需要先获取 LFS 对象。检查会明确报告 PAL98 四个必需文件缺失；不会从 APK 文件名或“能打开 ZIP”推断完整剧情兼容。
+只检查归档元数据、文件摘要和 PAL98 必需资源的文件名候选。Git LFS 指针需要先取得原始对象；文件名匹配不表示资源格式或完整剧情已经验证。
 
 ## 界面预览
 

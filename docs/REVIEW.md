@@ -40,13 +40,10 @@
 - `palverify` 本地构建通过。新增代码未依赖新模块；解码直接使用现有 x/text。
 - 原版流程状态仍为 pending-data，未实际验证任何原版主线或支线；不将合成测试与单次脚本停止归为全游戏通过。
 
-## APK 静态核查与输入诊断复审
+## APK 检查工具复审
 
-- 从用户主分支 Git LFS 获取原始 APK，SHA-256 与 pointer 的 oid 相符；未安装、执行或联系包内服务。
-- manifest/ARSC/DEX 与资源清单表明目标为 `com.tencent.xjcard` 1.1.79《仙剑奇侠传 官方手游》。不是已有 PAL98 流程验收输入；用户确认继续原目标。
-- `apkinspect` 仅读中央目录与文件摘要，CLI 在真实 APK 上核对出 14,445 个成员、402,776,228 声明解压字节；PAL98 四个必需文件名缺失。结构检查不等于 ZIP 成员 CRC、签名、资源内容或完整游戏验证。
-- 主 agent 退回修正 ZIP 分配前内存限制：中央目录最大 64 MiB，成员名最大 4096 字节；合成测试验证提前失败。所有输入数据和其他读取上限见 internal/apkinspect。
-- 合并树预检确认用户主分支 APK pointer、.gitattributes、LICENSE 的 blob 未改变，零删除；代码改用独立分支提交审查，未直接更新主分支。
-
-- Python 辅助工具退回修正：补 ZIP 分配前目录上限，输出仅允许 JSON 且拒绝覆盖输入/链接；11 项 Python 回归由主 agent 复跑通过，真实 APK 再读取的身份与摘要相同。
-- 全部 11 个 Go 包的 race 测试、vet、本地 CLI 构建及 Windows amd64 `palverify` 交叉编译通过；没有任何实际游戏主线通过声明。
+- `apkinspect` 检查元数据和摘要，不提取或执行目标。文件名候选与资源内容验证分别报告。
+- 主 agent 退回修正 ZIP 分配前内存限制：中央目录最大 64 MiB，成员名最大 4096 字节；合成测试验证提前失败。
+- Python 辅助工具退回修正：补 ZIP 分配前目录上限，输出仅允许 JSON 且拒绝覆盖输入/链接；11 项回归通过。
+- 11 个 Go 包 race 测试、vet、本地 CLI 构建及 Windows amd64 palverify 交叉编译通过。GitHub CI 的测试和 Linux/Windows/macOS 构建均通过，见工作流运行记录。
+- 用户主分支原有文件已通过合并树检查保留；代码使用独立分支和 PR 提交。

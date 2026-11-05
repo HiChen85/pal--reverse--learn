@@ -32,4 +32,4 @@ offset16 entries and references are unresolved. DEX supports the ordinary
 little-endian primary classes.dex tables used by the supplied sample; method
 bodies, multidex traversal and complete MUTF-8 semantics are out of scope.
 A declared SDK level does not establish runtime support. Class presence does not
-establish API invocation. See [the analysis report](../../docs/APK_ANALYSIS.md).
+establish API invocation.
