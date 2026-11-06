@@ -17,6 +17,16 @@ func opcodeName(op uint16) string {
 		return "counted_jump"
 	case 4:
 		return "call_trigger"
+	case 5:
+		return "redraw_record_operand2_zero_only"
+	case 0x43:
+		return "music_config_record_no_playback"
+	case 0x45:
+		return "battle_music_config"
+	case 0x47:
+		return "sound_record_no_playback"
+	case 0x8e:
+		return "restore_screen_record_only"
 	case 6:
 		return "random_branch_explicit_input"
 	case 7:
@@ -36,18 +46,53 @@ func opcodeName(op uint16) string {
 	case 0xffff:
 		return "message_table_reference"
 	default:
+		if name := partyWalkOpcodeName(op); name != "" {
+			return name
+		}
+		if name := ticksOpcodeName(op); name != "" {
+			return name
+		}
+		if name := playerOpcodeName(op); name != "" {
+			return name
+		}
+		if name := inventoryOpcodeName(op); name != "" {
+			return name
+		}
+		if name := worldOpcodeName(op); name != "" {
+			return name
+		}
 		return "unsupported"
 	}
 }
 func supported(op uint16) bool { return opcodeName(op) != "unsupported" }
+func operandRestriction(inst Instruction) string {
+	if inst.Opcode == 0x70 {
+		return "party walk requires a complete single-member world snapshot and bounded auto scheduling; table-only audit cannot expand it"
+	}
+	if inst.Opcode == 9 {
+		return "wait requires explicit current-scene world state and bounded auto scheduling; table-only audit cannot safely expand it"
+	}
+	if inst.Opcode == 5 && inst.Operands[2] != 0 {
+		return "redraw operand 2 requests PAL_UpdatePartyGestures; party/world gesture effects are not modeled"
+	}
+	return ""
+}
 func counts(entries []Instruction) []OpcodeCount {
 	byOp := map[uint16]int{}
+	modeled := map[uint16]int{}
 	for _, inst := range entries {
 		byOp[inst.Opcode]++
+		if supported(inst.Opcode) && operandRestriction(inst) == "" {
+			modeled[inst.Opcode]++
+		}
 	}
 	out := make([]OpcodeCount, 0, len(byOp))
 	for op, n := range byOp {
-		out = append(out, OpcodeCount{Opcode: op, Hex: fmt.Sprintf("0x%04x", op), Name: opcodeName(op), Count: n, Supported: supported(op)})
+		constraints := []string(nil)
+		if op == 5 {
+			constraints = []string{"Operand 2 must be zero; party gesture updates are not modeled."}
+		}
+		out = append(out, OpcodeCount{ModeledCount: modeled[op], OperandConstraints: constraints, Opcode: op, Hex: fmt.Sprintf("0x%04x", op), Name: opcodeName(op), Count: n, Supported: supported(op)})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Opcode < out[j].Opcode })
 	return out
@@ -59,7 +104,7 @@ func Inventory(entries []Instruction) InventoryReport {
 	result := InventoryReport{Instructions: len(entries), Opcodes: counts(entries)}
 	for _, count := range result.Opcodes {
 		if count.Supported {
-			result.ModeledInstructions += count.Count
+			result.ModeledInstructions += count.ModeledCount
 		}
 	}
 	return result
@@ -78,7 +123,7 @@ func AuditMany(entries []Instruction, roots []uint16) AuditReport {
 		"Traversal stops at unsupported instructions; outgoing behavior and the rest of a quest may be unknown.",
 		"Both branch outcomes are included without evaluating world conditions, idle counters, confirmations, random values or battle outcomes.",
 		"Call-return and subsequent-trigger resume edges are possible edges, not proof that a callee returns or an event is triggered again.",
-		"This audit does not validate scene transitions, automatic scripts, world effects, dialogue rendering, combat, main story or side quests.",
+		"This audit does not resolve equipment rebuild implicit calls or verify scene transitions, automatic scripts, world effects, dialogue rendering, combat, main story or side quests.",
 		"Message references are not resolved by this table-only audit; a missing message blocks a runtime trace when reached.",
 	}}
 	rootSet := map[uint16]bool{}
@@ -111,8 +156,11 @@ func AuditMany(entries []Instruction, roots []uint16) AuditReport {
 		result.Reachable = append(result.Reachable, pc)
 		inst := entries[pc]
 		reached = append(reached, inst)
-		if !supported(inst.Opcode) {
+		if !supported(inst.Opcode) || operandRestriction(inst) != "" {
 			reason := "opcode is not modeled; static traversal stops here"
+			if restriction := operandRestriction(inst); restriction != "" {
+				reason = restriction
+			}
 			if inst.Opcode == 9 {
 				reason = "wait invokes game updates and automatic scripts; traversal cannot treat it as a no-op"
 			}
@@ -161,6 +209,14 @@ func AuditMany(entries []Instruction, roots []uint16) AuditReport {
 				add(a[2], "external_battle_fled")
 			}
 			next("external_battle_other_result")
+		case 0x1e:
+			if int16(a[0]) < 0 {
+				add(a[1], "possible_cash_insufficient")
+			}
+			next("possible_cash_sufficient")
+		case 0x58:
+			add(a[2], "possible_inventory_insufficient")
+			next("possible_inventory_sufficient")
 		case 0xa:
 			add(a[0], "confirm_no")
 			next("confirm_yes")

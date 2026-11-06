@@ -42,8 +42,9 @@ func New(source Source, options Options) (*Runner, error) {
 }
 
 // Trace executes one bounded invocation of the modeled trigger subset. A
-// stopped script is not proof of a valid quest route. It never runs auto scripts,
-// world effects, combat, renderers, or custom-message-file span remapping.
+// stopped script is not proof of a valid quest route. Only the explicitly
+// modeled world/auto subset is run; combat, renderers and custom-message-file
+// span remapping are not implemented.
 // A failing instruction commits neither state nor input consumption; its evidence
 // is returned separately in Blocker, after the successfully committed prefix.
 func (r *Runner) Trace(request Request) (Report, error) {
@@ -51,13 +52,13 @@ func (r *Runner) Trace(request Request) (Report, error) {
 	if eventID == 0xffff {
 		eventID = request.LastEventID
 	}
-	state := State{Frames: []Frame{{PC: request.Entry, Entry: request.Entry, NextEntry: request.Entry, EventID: eventID}}, IdleFrames: maps.Clone(request.IdleFrames), LastEventID: eventID}
+	state := State{CurEquipPart: -1, ScriptSuccess: true, World: CloneWorld(request.World), Frames: []Frame{{PC: request.Entry, Entry: request.Entry, NextEntry: request.Entry, EventID: eventID}}, IdleFrames: maps.Clone(request.IdleFrames), LastEventID: eventID}
 	if state.IdleFrames == nil {
 		state.IdleFrames = map[uint16]uint16{}
 	}
 	report := Report{Status: "blocked", Coverage: "partial trigger-script model; no main-story or side-quest verification", Limitations: []string{
 		"Only the modeled trigger opcode subset is executed; unsupported instructions stop the trace.",
-		"World state, automatic scripts, rendering and combat are not executed. Dialog settings are recorded, not rendered.",
+		"Only the explicit world, inventory, equipment, resource and restricted auto-script subset is modeled. Trigger-enabled updates, general collision, rendering, audio playback and combat are not executed. Dialog/screen/audio requests are recorded; music configuration scalars are tracked per invocation.",
 		"Message lookup uses direct original-table indexes; custom message-file span remapping is not modeled.",
 		"Event contexts and initial idle counters are caller-supplied; event existence and spatial trigger reachability are not verified.",
 	}}
@@ -79,7 +80,7 @@ func (r *Runner) Trace(request Request) (Report, error) {
 			finalize(&report, state, request.Inputs)
 			return report, blocker
 		}
-		if state.ExecutedSteps >= r.options.MaxSteps {
+		if state.ExecutedSteps+state.PlayerSubsteps+state.WorldTicks+state.AutoSubsteps >= r.options.MaxSteps {
 			return fail("step_limit", "maximum modeled instruction count reached", nil)
 		}
 		inst, err := r.source.Instruction(frame.PC)
@@ -125,6 +126,7 @@ func (r *Runner) Trace(request Request) (Report, error) {
 func finalize(report *Report, state State, inputs []Input) {
 	state.Frames = append([]Frame(nil), state.Frames...)
 	state.IdleFrames = maps.Clone(state.IdleFrames)
+	state.World = CloneWorld(state.World)
 	report.State = state
 	report.InputsConsumed = state.InputIndex
 	report.UnusedInputs = append([]Input(nil), inputs[state.InputIndex:]...)
@@ -139,6 +141,7 @@ func finishZeroFrames(state *State) {
 }
 func stopFrame(state *State, step *TraceStep) {
 	index := len(state.Frames) - 1
+	state.CurEquipPart = -1
 	returned := state.Frames[index].NextEntry
 	state.Frames = state.Frames[:index]
 	if step != nil {
@@ -184,6 +187,24 @@ func consume(state *State, inputs []Input, kind string) (*InputUse, error) {
 	return used, nil
 }
 func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, inputs []Input) error {
+	if handled, err := r.evaluatePartyWalk(state, step, inst, inputs); handled {
+		return err
+	}
+	if handled, err := r.evaluateTicks(state, step, inst, inputs); handled {
+		return err
+	}
+	if handled, err := r.evaluatePlayer(state, step, inst); handled {
+		return err
+	}
+	if handled, err := evaluateInventory(state, step, inst); handled {
+		return err
+	}
+	if handled, err := r.evaluateResources(state, step, inst); handled {
+		return err
+	}
+	if handled, err := evaluateWorld(state, step, inst); handled {
+		return err
+	}
 	index := len(state.Frames) - 1
 	frame := &state.Frames[index]
 	a := inst.Operands
@@ -255,8 +276,57 @@ func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, input
 		}
 		frame.PC = pc
 		state.LastEventID = context
+		state.ScriptSuccess = true
 		state.Frames = append(state.Frames, Frame{PC: a[0], Entry: a[0], NextEntry: a[0], EventID: context})
 		step.Effect = "call trigger with explicit/inherited event context; callee return entry is ignored"
+	case 5:
+		if restriction := operandRestriction(inst); restriction != "" {
+			return errors.New(restriction)
+		}
+		if err := advance(); err != nil {
+			return err
+		}
+		delay := uint32(a[1]) * 60
+		if a[1] == 0 {
+			delay = 60
+		}
+		step.Screen = &ScreenRecord{Kind: "redraw", ClearDialogRequested: true, OverworldDelayMilliseconds: delay}
+		step.Effect = "record dialog-clear/redraw request only; conditional overworld delay recorded, no rendering, waiting or party gesture update executed"
+	case 0x43:
+		if err := advance(); err != nil {
+			return err
+		}
+		state.Music = a[0]
+		state.MusicKnown = true
+		audio := &AudioRecord{Kind: "music", ID: a[0], Loop: a[1] != 1, PlaybackRequested: true}
+		if a[1] == 3 && a[0] != 9 {
+			audio.FadeSeconds = 3
+		}
+		step.Audio = audio
+		step.Screen = &ScreenRecord{Kind: "clear_dialog", ClearDialogRequested: true}
+		step.Effect = "store background music ID and record playback/loop/fade request; audio not executed"
+	case 0x45:
+		if err := advance(); err != nil {
+			return err
+		}
+		state.BattleMusic = a[0]
+		state.BattleMusicKnown = true
+		step.Audio = &AudioRecord{Kind: "battle_music_config", ID: a[0]}
+		step.Screen = &ScreenRecord{Kind: "clear_dialog", ClearDialogRequested: true}
+		step.Effect = "store battle music ID; no playback requested by this instruction"
+	case 0x47:
+		if err := advance(); err != nil {
+			return err
+		}
+		step.Audio = &AudioRecord{Kind: "sound", ID: a[0], PlaybackRequested: true}
+		step.Screen = &ScreenRecord{Kind: "clear_dialog", ClearDialogRequested: true}
+		step.Effect = "record sound effect request; audio not executed"
+	case 0x8e:
+		if err := advance(); err != nil {
+			return err
+		}
+		step.Screen = &ScreenRecord{Kind: "restore_screen", ClearDialogRequested: true}
+		step.Effect = "record dialog-clear and screen-restore request; no rendering executed"
 	case 6:
 		input, err := consume(state, inputs, InputRandom)
 		if err != nil {

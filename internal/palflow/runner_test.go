@@ -12,6 +12,10 @@ type tables struct {
 	messages map[uint16]string
 }
 
+func (s tables) SpriteResource(id uint16) (SpriteResource, error) {
+	return SpriteResource{ID: id, FrameCount: 3, DecodedSize: 42, SHA256: "synthetic"}, nil
+}
+
 func (s tables) Instruction(pc uint16) (Instruction, error) {
 	if int(pc) >= len(s.scripts) {
 		return Instruction{}, fmt.Errorf("instruction %d out of bounds", pc)
@@ -170,8 +174,8 @@ func TestBlockedInstructionDoesNotCommitStateOrInput(t *testing.T) {
 		request Request
 		reason  string
 	}{
-		{"unknown", tables{scripts: []Instruction{ins(0), ins(0x59)}}, Request{Entry: 1}, "not modeled"},
-		{"wait_updates_world", tables{scripts: []Instruction{ins(0), ins(9)}}, Request{Entry: 1}, "PAL_GameUpdate"},
+		{"unknown", tables{scripts: []Instruction{ins(0), ins(0x7fff)}}, Request{Entry: 1}, "not modeled"},
+		{"wait_updates_world", tables{scripts: []Instruction{ins(0), ins(9)}}, Request{Entry: 1}, "world snapshot"},
 		{"missing_input", tables{scripts: []Instruction{ins(0), ins(6, 50, 4)}}, Request{Entry: 1}, "explicit random"},
 		{"wrong_input", tables{scripts: []Instruction{ins(0), ins(6, 50, 4)}}, Request{Entry: 1, Inputs: []Input{{InputConfirm, 1}}}, "expected random"},
 		{"invalid_input", tables{scripts: []Instruction{ins(0), ins(6, 50, 4)}}, Request{Entry: 1, Inputs: []Input{{InputRandom, 101}}}, "invalid random"},
@@ -271,5 +275,65 @@ func TestRepeatedMessageTextBudgetRejectsBeforeCommit(t *testing.T) {
 	runner, err = New(source, Options{})
 	if err != nil || runner.options.MaxTextBytes != DefaultMaxTextBytes {
 		t.Fatal("default text budget missing")
+	}
+}
+
+func TestScreenAndAudioPresentationSubset(t *testing.T) {
+	scripts := []Instruction{ins(0), ins(0x43, 12, 3), ins(0x45, 37), ins(0x47, 212), ins(5, 0, 2, 0), ins(0x8e), ins(0)}
+	report := run(t, tables{scripts: scripts}, Request{Entry: 1})
+	if !report.State.MusicKnown || report.State.Music != 12 || !report.State.BattleMusicKnown || report.State.BattleMusic != 37 {
+		t.Fatalf("music config not retained: %+v", report.State)
+	}
+	music := report.Trace[0].Audio
+	if music == nil || music.Kind != "music" || music.ID != 12 || !music.Loop || music.FadeSeconds != 3 || !music.PlaybackRequested || music.Executed {
+		t.Fatalf("music request wrong: %+v", music)
+	}
+	battleMusic := report.Trace[1].Audio
+	if battleMusic.Kind != "battle_music_config" || battleMusic.PlaybackRequested || battleMusic.Executed {
+		t.Fatal("battle music setter unexpectedly plays audio")
+	}
+	sound := report.Trace[2].Audio
+	if sound.ID != 212 || sound.Kind != "sound" || !sound.PlaybackRequested || sound.Executed {
+		t.Fatal("sound effect not record-only")
+	}
+	redraw := report.Trace[3].Screen
+	if redraw == nil || redraw.Kind != "redraw" || !redraw.ClearDialogRequested || redraw.Rendered || redraw.OverworldDelayMilliseconds != 120 {
+		t.Fatalf("redraw request wrong: %+v", redraw)
+	}
+	restore := report.Trace[4].Screen
+	if restore == nil || restore.Kind != "restore_screen" || restore.Rendered || !restore.ClearDialogRequested {
+		t.Fatal("restore must be record-only")
+	}
+	for _, test := range []struct {
+		id, mode uint16
+		loop     bool
+		fade     float64
+	}{{9, 3, true, 0}, {12, 1, false, 0}, {0, 0, true, 0}} {
+		r := run(t, tables{scripts: []Instruction{ins(0), ins(0x43, test.id, test.mode), ins(5), ins(0)}}, Request{Entry: 1})
+		a := r.Trace[0].Audio
+		if a.Loop != test.loop || a.FadeSeconds != test.fade || r.State.Music != test.id || r.Trace[1].Screen.OverworldDelayMilliseconds != 60 {
+			t.Fatal("music exception/loop or default redraw delay differs from source")
+		}
+	}
+}
+func TestGestureRedrawBlocksAndPresentationFailureRollsBack(t *testing.T) {
+	scripts := []Instruction{ins(0), ins(0x43, 12, 1), ins(5, 0, 1, 1), ins(0xffff, 0), ins(0)}
+	runner, err := New(tables{scripts: scripts, messages: map[uint16]string{0: "must not display"}}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := runner.Trace(Request{Entry: 1})
+	if err == nil || report.Blocker.PC != 2 || !strings.Contains(report.Blocker.Reason, "PAL_UpdatePartyGestures") || len(report.Trace) != 1 || len(report.DialogueIDs) != 0 || report.State.Frames[0].PC != 2 || !report.State.MusicKnown || report.State.Music != 12 {
+		t.Fatalf("gesture redraw did not preserve prefix/block: %+v %v", report, err)
+	}
+	full := make([]Instruction, 1<<16)
+	full[65535] = ins(0x43, 55, 3)
+	runner, err = New(tables{scripts: full}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err = runner.Trace(Request{Entry: 65535})
+	if err == nil || report.State.MusicKnown || report.State.BattleMusicKnown || report.State.Music != 0 || report.State.Frames[0].PC != 65535 || len(report.Trace) != 0 {
+		t.Fatal("failed music instruction committed config or wrapped PC")
 	}
 }

@@ -10,7 +10,7 @@ func TestAuditManyUnionsRootsAndStopsAtUnsupported(t *testing.T) {
 	scripts := make([]Instruction, 10)
 	scripts[1] = ins(6, 50, 4)
 	scripts[2] = ins(4, 6)
-	scripts[3] = ins(0x59)
+	scripts[3] = ins(0x7fff)
 	scripts[4] = ins(0xffff, 0)
 	scripts[5] = ins(0)
 	scripts[6] = ins(9)
@@ -61,5 +61,23 @@ func TestAuditBoundsAndCounterBranchOverapproximation(t *testing.T) {
 	report = Audit(full, 65535)
 	if len(report.Blockers) != 1 || len(report.Edges) != 0 || len(report.Reachable) != 1 || report.Blockers[0].PC != 65535 {
 		t.Fatal("audit wrapped 16-bit PC")
+	}
+}
+
+func TestConditionalRedrawSupportInInventoryAndAudit(t *testing.T) {
+	scripts := []Instruction{ins(0), ins(5), ins(5, 0, 0, 1), ins(0x43, 9, 3), ins(0)}
+	inventory := Inventory(scripts)
+	var redraw OpcodeCount
+	for _, count := range inventory.Opcodes {
+		if count.Opcode == 5 {
+			redraw = count
+		}
+	}
+	if !redraw.Supported || redraw.Count != 2 || redraw.ModeledCount != 1 || len(redraw.OperandConstraints) == 0 || inventory.ModeledInstructions != 4 {
+		t.Fatalf("operand-constrained support hidden: %+v", inventory)
+	}
+	audit := Audit(scripts, 1)
+	if !reflect.DeepEqual(audit.Reachable, []uint16{1, 2}) || len(audit.Blockers) != 1 || audit.Blockers[0].PC != 2 || !strings.Contains(audit.Blockers[0].Reason, "PAL_UpdatePartyGestures") {
+		t.Fatalf("static audit passed gesture update: %+v", audit)
 	}
 }

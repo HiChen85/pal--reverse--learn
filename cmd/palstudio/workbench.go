@@ -13,6 +13,7 @@ import (
 )
 
 type workbench struct {
+	original                               *originalData
 	service                                *studio.Studio
 	draft                                  content.Pack
 	tab                                    int
@@ -177,7 +178,7 @@ func (a *workbench) view(c *ui.Context) {
 				ui.Text(c, state).FontSize(12).TextColor(t.TextMuted)
 			})
 		})
-		ui.Tabs(c, &a.tab, "剧情", "人物", "物品", "试玩", "完整 JSON").Padding(12, 22)
+		ui.Tabs(c, &a.tab, "剧情", "人物", "物品", "试玩", "完整 JSON", "原版数据").Padding(12, 22)
 		ui.Scroll(c).Grow(1).Children(func() {
 			ui.Column(c).Padding(8, 22, 22).Gap(12).FillWidth().Children(func() {
 				switch a.tab {
@@ -191,6 +192,8 @@ func (a *workbench) view(c *ui.Context) {
 					a.preview(c)
 				case 4:
 					a.jsonEditor(c)
+				case 5:
+					a.originalView(c)
 				}
 			})
 		})

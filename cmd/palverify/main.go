@@ -29,6 +29,8 @@ type datasetSummary struct {
 	Profile           string         `json:"requested_profile"`
 	ReleaseIdentified bool           `json:"release_identified"`
 	Encoding          string         `json:"encoding"`
+	Layout            string         `json:"layout"`
+	ObjectWords       int            `json:"object_words"`
 	Files             []fileEvidence `json:"files"`
 	Scripts           int            `json:"scripts"`
 	Scenes            int            `json:"scene_table_records"`
@@ -66,11 +68,12 @@ func main() {
 }
 func help(w io.Writer) {
 	fmt.Fprintln(w, `palverify apk -file <APK路径> [-out reports/apk.json]
+palverify enter -data <目录> -encoding <big5|gbk> [-layout dos|windows] [-scene 1] [-mgo <MGO.MKF>] [-out reports/enter.json]
 palverify inspect -data <目录> -encoding <big5|gbk> [-out reports/import.json]
 palverify audit   -data <目录> -encoding <big5|gbk> [-entry <脚本索引>] [-out reports/audit.json]
 palverify trace   -data <目录> -encoding <big5|gbk> -route <路线.json> [-include-text] [-out reports/trace.json]
 
-目标是 Windows 98 柔情篇的资源布局；版本身份需后续用实际文件确认。
+默认读取 Windows 对象布局；可显式用 -layout dos 读取 DOS 布局。发行版本身份需另行确认。
 inspect 读取表与 SHA-256；audit 仅审计已建模指令前缀；trace 仅执行指定触发脚本。
 任何结果均不等于主线或全部支线已验证。遇到未实现指令时停止并返回非零。
 对话正文默认以消息ID和摘要代替；-include-text 仅用于本地核对，请勿提交商业台词。`)
@@ -85,6 +88,9 @@ func run(args []string, out, errout io.Writer) error {
 		return nil
 	}
 	mode := args[0]
+	if mode == "enter" {
+		return runEntry(args[1:], out, errout)
+	}
 	if mode == "apk" {
 		return runAPK(args[1:], out, errout)
 	}
@@ -95,6 +101,7 @@ func run(args []string, out, errout io.Writer) error {
 	fs.SetOutput(errout)
 	dir := fs.String("data", "", "原版数据目录")
 	encoding := fs.String("encoding", "", "明确选择 big5 或 gbk")
+	layout := fs.String("layout", "windows", "明确选择 windows 或 dos 对象布局")
 	output := fs.String("out", "", "本地 JSON 报告路径；默认 stdout")
 	entry := fs.Int("entry", -1, "仅审计一个入口；默认场景与事件触发入口")
 	routePath := fs.String("route", "", "带文件摘要与预期消息序列的路线")
@@ -134,7 +141,7 @@ func run(args []string, out, errout io.Writer) error {
 			return errors.New("报告不能覆盖路线文件")
 		}
 	}
-	g, err := paldata.Load(*dir, paldata.Options{Encoding: *encoding})
+	g, err := paldata.Load(*dir, paldata.Options{Encoding: *encoding, Layout: *layout})
 	if err != nil {
 		return err
 	}
@@ -213,6 +220,8 @@ func run(args []string, out, errout io.Writer) error {
 }
 func summarize(g *paldata.Game) datasetSummary {
 	r := datasetSummary{Profile: g.Profile, Encoding: g.Encoding, Scripts: len(g.Scripts), Scenes: len(g.Scenes), Events: len(g.Events), Objects: len(g.Objects), Messages: len(g.Messages), Words: len(g.Words)}
+	r.Layout = g.Layout
+	r.ObjectWords = g.ObjectWords
 	r.Warnings = append([]string(nil), g.Warnings...)
 	for _, f := range g.Files {
 		r.Files = append(r.Files, fileEvidence{Name: strings.ToUpper(f.Name), SHA256: f.SHA256, Size: f.Size})

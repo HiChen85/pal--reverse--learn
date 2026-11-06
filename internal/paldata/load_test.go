@@ -267,3 +267,55 @@ func TestUnindexedMessagePaddingAndDanglingDialogueAreWarnings(t *testing.T) {
 		}
 	}
 }
+
+func TestDOSLayoutPreservesRawAndNormalizesFlags(t *testing.T) {
+	files, chunks := fixture(t, "big5")
+	chunks[2] = u16(10, 20, 30, 40, 50, 0x1234)
+	files["SsS.MkF"] = mkf(chunks[:]...)
+	dir := writeFixture(t, files)
+	if _, err := Load(dir, Options{Encoding: "big5"}); err == nil {
+		t.Fatal("DOS records silently accepted as default Windows layout")
+	}
+	g, err := Load(dir, Options{Encoding: "big5", Layout: "dos"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g.Layout != "dos" || g.ObjectWords != 6 || g.Profile != ProfileDOS {
+		t.Fatal("requested DOS profile not recorded")
+	}
+	if len(g.RawObjects) != 1 || len(g.RawObjects[0]) != 6 || g.RawObjects[0][5] != 0x1234 {
+		t.Fatal("DOS raw object lost")
+	}
+	if g.Objects[0] != [7]uint16{10, 20, 30, 40, 50, 0, 0x1234} {
+		t.Fatalf("DOS normalized object: %#v", g.Objects[0])
+	}
+	g.Objects[0][6] = 9
+	if g.RawObjects[0][5] != 0x1234 {
+		t.Fatal("normalized and raw objects share storage")
+	}
+}
+
+func TestWindowsLayoutExplicitAndDefault(t *testing.T) {
+	files, _ := fixture(t, "big5")
+	dir := writeFixture(t, files)
+	for _, layout := range []string{"", "windows"} {
+		g, err := Load(dir, Options{Encoding: "big5", Layout: layout})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if g.Layout != "windows" || g.ObjectWords != 7 || g.Profile != Profile {
+			t.Fatal("Windows default behavior changed")
+		}
+		if len(g.RawObjects[0]) != 7 || g.RawObjects[0][5] != 5 || g.Objects[0][5] != 5 || g.Objects[0][6] != 6 {
+			t.Fatal("Windows words normalized incorrectly")
+		}
+	}
+	if _, err := Load(dir, Options{Encoding: "big5", Layout: "dos"}); err == nil {
+		t.Fatal("Windows record silently accepted as DOS")
+	}
+	for _, layout := range []string{"auto", "DOS", "win98", "unknown"} {
+		if _, err := Load(dir, Options{Encoding: "big5", Layout: layout}); err == nil {
+			t.Fatalf("accepted layout %q", layout)
+		}
+	}
+}

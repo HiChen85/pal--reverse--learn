@@ -1,5 +1,5 @@
 // Package paldata provides bounded, read-only import of PAL1 script and text
-// tables. It interprets a requested Windows-layout profile; it does not identify
+// tables. It interprets an explicitly requested DOS or Windows object layout; it does not identify
 // the release, execute scripts, decompress resources, or establish a game route.
 package paldata
 
@@ -22,6 +22,7 @@ import (
 )
 
 const Profile = "pal1-win98-requested-windows-layout"
+const ProfileDOS = "pal1-requested-dos-layout"
 const (
 	MaxArchiveBytes  = 64 << 20
 	MaxMessageBytes  = 32 << 20
@@ -35,7 +36,12 @@ const (
 	WordWidth        = 10
 )
 
-type Options struct{ Encoding string }
+type Options struct {
+	Encoding string
+	// Layout selects object record width. Empty defaults to "windows" for
+	// compatibility; "dos" must be explicit. This is not release detection.
+	Layout string
+}
 type FileInfo struct {
 	Name   string
 	SHA256 string
@@ -56,6 +62,9 @@ type ChunkInfo struct {
 	Size  int64
 }
 type Game struct {
+	Layout         string
+	ObjectWords    int
+	RawObjects     [][]uint16
 	Profile        string
 	Encoding       string
 	Files          []FileInfo
@@ -85,11 +94,23 @@ func Load(dir string, options Options) (*Game, error) {
 	default:
 		return nil, errors.New("paldata: Encoding must explicitly be big5 or gbk")
 	}
+	layout := options.Layout
+	if layout == "" {
+		layout = "windows"
+	}
+	profile, objectWords := Profile, 7
+	switch layout {
+	case "windows":
+	case "dos":
+		profile, objectWords = ProfileDOS, 6
+	default:
+		return nil, errors.New("paldata: Layout must be windows or dos (empty defaults to windows)")
+	}
 	names, err := requiredFiles(dir)
 	if err != nil {
 		return nil, err
 	}
-	g := &Game{Profile: Profile, Encoding: options.Encoding}
+	g := &Game{Profile: profile, Encoding: options.Encoding, Layout: layout, ObjectWords: objectWords}
 	payloads := make(map[string][]byte, 4)
 	for _, name := range []string{"SSS.MKF", "DATA.MKF", "M.MSG", "WORD.DAT"} {
 		limit := int64(MaxArchiveBytes)
@@ -152,7 +173,7 @@ func Load(dir string, options Options) (*Game, error) {
 		return nil, fmt.Errorf("DATA.MKF: %w", err)
 	}
 	if dataMKF.Count() < 15 {
-		return nil, errors.New("DATA.MKF: requires chunks 0 through 14 for requested Windows layout")
+		return nil, fmt.Errorf("DATA.MKF: requires chunks 0 through 14 for requested %s layout", layout)
 	}
 	if dataMKF.Count() > 4096 {
 		return nil, errors.New("DATA.MKF: exceeds 4096 chunk inventory limit")
@@ -311,19 +332,36 @@ func readScenes(g *Game, data []byte) error {
 	}
 	return nil
 }
+
+// readObjects preserves the input words before normalizing the DOS object union
+// into the seven-word Windows-shaped storage used by downstream inventory code.
+// That normalization does not turn the source game into a Windows release.
 func readObjects(g *Game, data []byte) error {
-	count, err := recordCount(data, 14, MaxObjects, "SSS chunk2 Windows objects")
+	width := g.ObjectWords * 2
+	if g.ObjectWords != 6 && g.ObjectWords != 7 {
+		return errors.New("invalid object record width")
+	}
+	count, err := recordCount(data, width, MaxObjects, "SSS chunk2 "+g.Layout+" objects")
 	if err != nil {
 		return err
 	}
 	g.Objects = make([][7]uint16, count)
+	g.RawObjects = make([][]uint16, count)
 	for i := range g.Objects {
-		for j := range g.Objects[i] {
-			g.Objects[i][j] = word(data[i*14:(i+1)*14], j)
+		raw := make([]uint16, g.ObjectWords)
+		for j := range raw {
+			raw[j] = word(data[i*width:(i+1)*width], j)
+		}
+		g.RawObjects[i] = raw
+		copy(g.Objects[i][:], raw)
+		if g.Layout == "dos" {
+			g.Objects[i][6] = raw[5]
+			g.Objects[i][5] = 0
 		}
 	}
 	return nil
 }
+
 func readMessages(g *Game, index, data []byte, codepage encoding.Encoding) error {
 	if len(index)%4 != 0 || len(index) < 8 || len(index)/4 > MaxMessages+1 {
 		return errors.New("SSS chunk3: invalid message offset count/alignment")

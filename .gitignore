@@ -53,3 +53,4 @@ go.work.sum
 # Python inspection helper caches
 __pycache__/
 *.py[cod]
+*.paltrace.json
