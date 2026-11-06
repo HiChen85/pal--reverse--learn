@@ -480,14 +480,31 @@ func TestLocalOriginalUIAssetCheckpoint(t *testing.T) {
 	if rejected.Invoked || rejected.Request != nil || rejected.SessionCommitted || !reflect.DeepEqual(beforeRepeat, o.session.Snapshot()) || !reflect.DeepEqual(rejected.SessionBefore, &beforeRepeat) || !reflect.DeepEqual(rejected.SessionAfter, &beforeRepeat) {
 		t.Fatal("rejected repeat invented invocation or changed the opening/pickup state")
 	}
-	// The next unsupported boundary executes a proposal, then rolls the entire
-	// proposal back rather than discarding the already committed opening/pickups.
+	// Departure now completes its presentation-only prefix and changes scene.
+	// The resource switch belongs to the subsequent Enter transaction.
 	o.event = "1"
-	if err := o.run("event_trigger"); err == nil {
-		t.Fatal("update the departure boundary after its implementation changes")
+	if err := o.run("event_trigger"); err != nil {
+		t.Fatal("departure failed", err)
 	}
 	departure := o.history[len(o.history)-1]
-	if !departure.Invoked || departure.Request == nil || departure.SessionCommitted || departure.Report.Blocker == nil || departure.Report.Blocker.PC != 4669 || departure.Report.Blocker.Opcode != 0x50 || !reflect.DeepEqual(beforeRepeat, o.session.Snapshot()) || !reflect.DeepEqual(departure.SessionBefore, &beforeRepeat) || !reflect.DeepEqual(departure.SessionAfter, &beforeRepeat) {
-		t.Fatal("departure blocker/rollback evidence mismatch")
+	afterDeparture := o.session.Snapshot()
+	if !departure.Invoked || departure.Request == nil || !departure.SessionCommitted || departure.Report.Blocker != nil || !departure.Report.Completed || afterDeparture.World.Scene != 3 || !afterDeparture.NeedsSceneEnter || !afterDeparture.World.SceneLoadPending || afterDeparture.Actions != beforeRepeat.Actions+1 || !reflect.DeepEqual(beforeRepeat.World.Inventory, afterDeparture.World.Inventory) || !reflect.DeepEqual(departure.SessionBefore, &beforeRepeat) || !reflect.DeepEqual(departure.SessionAfter, &afterDeparture) {
+		t.Fatal("departure scene transition/evidence mismatch")
+	}
+	if err := o.run("on_enter"); err != nil {
+		t.Fatal("next scene did not prepare its resources and enter", err)
+	}
+	entered := o.session.Snapshot()
+	next := o.history[len(o.history)-1]
+	if !next.Invoked || next.Request == nil || next.Request.Entry != 0 || next.Request.World.SceneResources == nil || next.Request.World.SceneResources.SceneID != 3 || next.Request.World.SceneResources.MapID != 10 || !next.SessionCommitted || !next.Report.Completed || entered.World.Scene != 3 || entered.NeedsSceneEnter || entered.World.SceneLoadPending || entered.World.SceneResources.SceneID != 3 || entered.World.SceneResources.MapID != 10 || entered.Actions != afterDeparture.Actions+1 || !reflect.DeepEqual(beforeRepeat.World.Inventory, entered.World.Inventory) {
+		t.Fatal("next Enter lost resource or inventory continuity")
+	}
+	for id, resource := range entered.World.SceneResources.EventSprites {
+		if entered.World.Events[id].SpriteFramesAuto != resource.FrameCount || resource.ArchiveSHA256 != o.mgoIdentity.SHA256 {
+			t.Fatal("next scene event frame metadata was not loaded from MGO", id)
+		}
+	}
+	if o.viewport == nil {
+		t.Fatal("entered local scene viewport unavailable", o.viewportError)
 	}
 }

@@ -17,6 +17,22 @@ type SpriteResourceSource interface {
 	SpriteResource(id uint16) (SpriteResource, error)
 }
 
+// SceneResourceState identifies the actually loaded map rather than the scene
+// table's next requested map. Opcode 99 can change that table without a reload.
+type SceneResourceState struct {
+	SceneID          uint16                    `json:"scene_id"`
+	MapID            uint16                    `json:"map_id"`
+	MAPArchiveSHA256 string                    `json:"map_archive_sha256"`
+	GOPArchiveSHA256 string                    `json:"gop_archive_sha256"`
+	MapSHA256        string                    `json:"map_sha256"`
+	GOPSHA256        string                    `json:"gop_sha256"`
+	EventSprites     map[uint16]SpriteResource `json:"event_sprites"`
+}
+
+type SceneResourceSource interface {
+	LoadResources(world *WorldState, scene, players bool) (*WorldState, error)
+}
+
 // PAL_LoadResources(kLoadPlayerSprite) reloads the whole current party and
 // followers, not just the role changed by 0x65. Scene loads are separate work;
 // a pending scene load must never be cleared by pretending only sprites loaded.
@@ -29,9 +45,6 @@ func (r *Runner) evaluateResources(state *State, step *TraceStep, inst Instructi
 	}
 	if state.World == nil {
 		return true, fmt.Errorf("sprite reload requires an explicit world snapshot")
-	}
-	if !state.World.InBattle && state.World.SceneLoadPending {
-		return true, fmt.Errorf("sprite reload also has a pending scene/map load, which is not modeled")
 	}
 	working := *state
 	working.Frames = append([]Frame(nil), state.Frames...)
@@ -59,6 +72,17 @@ func (r *Runner) evaluateResources(state *State, step *TraceStep, inst Instructi
 }
 
 func (r *Runner) loadPartySprites(w *WorldState) error {
+	if source, ok := r.source.(SceneResourceSource); ok {
+		loaded, err := source.LoadResources(w, w.SceneLoadPending, true)
+		if err != nil {
+			return err
+		}
+		if loaded == nil {
+			return fmt.Errorf("resource source returned no world snapshot")
+		}
+		*w = *CloneWorld(loaded)
+		return nil
+	}
 	if w.SceneLoadPending {
 		return fmt.Errorf("player reload also has a pending scene/map resource load")
 	}

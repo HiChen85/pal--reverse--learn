@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -28,6 +27,12 @@ type originalData struct {
 	game                                          *paldata.Game
 	runtime                                       *paldata.RuntimeTables
 	assets                                        *palasset.SpriteCatalog
+	maps                                          *palasset.MapCatalog
+	palettes                                      *palasset.PaletteCatalog
+	mapIdentities                                 []paldata.FileInfo
+	paletteIdentity                               *paldata.FileInfo
+	mapError, paletteError, viewportError         string
+	viewport                                      *ui.Bitmap
 	mgoIdentity                                   *paldata.FileInfo
 	assetError                                    string
 	runtimeError                                  string
@@ -35,8 +40,10 @@ type originalData struct {
 	useSession, assumeEntered                     bool
 	checkpoint                                    originalCheckpoint
 	scene, event                                  string
+	item, itemRole                                string
 	inputsJSON, exportPath                        string
 	lastEvent                                     float64
+	maxSteps                                      float64
 	enterPC                                       map[int]uint16
 	triggerPC                                     map[int]uint16
 	history                                       []originalInvocation
@@ -50,6 +57,9 @@ type originalActionIntent struct {
 	SceneNumber int             `json:"scene_number"`
 	EventID     uint16          `json:"event_id"`
 	Inputs      []palflow.Input `json:"inputs"`
+	Direction   *uint16         `json:"direction,omitempty"`
+	Item        *uint16         `json:"item,omitempty"`
+	TargetRole  *uint16         `json:"target_role,omitempty"`
 }
 type originalInvocation struct {
 	Invoked          bool                     `json:"invoked"`
@@ -66,9 +76,12 @@ type originalInvocation struct {
 	EventID          uint16                   `json:"event_id"`
 	Request          *palflow.Request         `json:"request,omitempty"`
 	Report           palflow.Report           `json:"report"`
+	Control          *palgame.ControlReport   `json:"control,omitempty"`
 }
 type originalEvidence struct {
 	MGOIdentity       *paldata.FileInfo  `json:"mgo_identity,omitempty"`
+	MapIdentities     []paldata.FileInfo `json:"map_identities,omitempty"`
+	PaletteIdentity   *paldata.FileInfo  `json:"palette_identity,omitempty"`
 	SpriteDecodeLimit int                `json:"sprite_decode_limit"`
 	SchemaVersion     int                `json:"schema_version"`
 	Scope             string             `json:"scope"`
@@ -79,7 +92,7 @@ type originalEvidence struct {
 }
 
 func newOriginalData() *originalData {
-	return &originalData{directory: filepath.Join("assets", "original"), encoding: "big5", layout: "dos", inputsJSON: "[]", exportPath: "original.paltrace.json"}
+	return &originalData{directory: filepath.Join("assets", "original"), encoding: "big5", layout: "dos", inputsJSON: "[]", exportPath: "original.paltrace.json", maxSteps: 10000}
 }
 func (o *originalData) load() error {
 	g, err := paldata.Load(o.directory, paldata.Options{Encoding: o.encoding, Layout: o.layout})
@@ -108,6 +121,17 @@ func (o *originalData) load() error {
 	if err != nil {
 		o.assetError = err.Error()
 	}
+	o.maps, o.mapIdentities, err = loadOriginalMaps(o.directory)
+	o.mapError = ""
+	if err != nil {
+		o.mapError = err.Error()
+	}
+	o.palettes, o.paletteIdentity, err = loadOriginalPalette(o.directory)
+	o.paletteError = ""
+	if err != nil {
+		o.paletteError = err.Error()
+	}
+	o.viewport, o.viewportError = nil, ""
 	o.runtime = nil
 	o.session = nil
 	o.runtimeError = ""
@@ -152,7 +176,10 @@ func (o *originalData) resetSession() error {
 	if err != nil {
 		return err
 	}
-	next, err := palgame.NewSession(o.game, o.runtime, palgame.SessionOptions{Assets: o.assets, Scene: uint16(index + 1), AssumeSceneEntered: o.assumeEntered, MaxSteps: originalSessionOptions().MaxSteps})
+	if o.maxSteps < 1 || o.maxSteps > palflow.MaxAllowedSteps || o.maxSteps != float64(int(o.maxSteps)) {
+		return errors.New("会话工作量上限必须是允许范围内的整数")
+	}
+	next, err := palgame.NewSession(o.game, o.runtime, palgame.SessionOptions{Assets: o.assets, Maps: o.maps, Scene: uint16(index + 1), AssumeSceneEntered: o.assumeEntered, MaxSteps: int(o.maxSteps)})
 	if err != nil {
 		return err
 	}
@@ -160,6 +187,7 @@ func (o *originalData) resetSession() error {
 	o.checkpoint = originalCheckpoint{Scene: uint16(index + 1), AssumeSceneEntered: o.assumeEntered}
 	o.history = nil
 	o.event = ""
+	o.updateViewport()
 	return nil
 }
 func (o *originalData) activeSceneIndex() (int, error) {
@@ -256,8 +284,12 @@ func decodeOriginalInputs(data string) ([]palflow.Input, error) {
 		i := len(result)
 		switch in.Kind {
 		case palflow.InputRandom:
-			if in.Value < 1 || in.Value > 100 {
-				return nil, fmt.Errorf("输入 %d 的 random 必须为 1..100", i)
+			if in.Value < 0 || in.Value > 2147483647 {
+				return nil, fmt.Errorf("输入 %d 的 random 必须为 0..2147483647；具体指令另行检查其范围", i)
+			}
+		case palflow.InputKey:
+			if in.Value != 1 {
+				return nil, fmt.Errorf("输入 %d 的 key 必须为 1，表示显式按键确认", i)
 			}
 		case palflow.InputConfirm:
 			if in.Value != 0 && in.Value != 1 {
@@ -328,7 +360,7 @@ func (o *originalData) run(kind string) error {
 		}
 	}
 	options := originalDiagnosticOptions()
-	runner, err := palflow.New(palgame.Source{Game: o.game, Assets: o.assets}, options)
+	runner, err := palflow.New(palgame.Source{Game: o.game, Assets: o.assets, Maps: o.maps}, options)
 	if err != nil {
 		return err
 	}
@@ -359,33 +391,28 @@ func (o *originalData) runSession(kind string, inputs []palflow.Input) error {
 	}
 	before := o.session.Snapshot()
 	scene := before.World.Scene
-	request := palflow.Request{Inputs: inputs, World: palflow.CloneWorld(before.World), IdleFrames: maps.Clone(before.IdleFrames), LastEventID: before.LastEventID}
+	eventID := uint16(0xffff)
 	var report palflow.Report
 	var runErr error
 	switch kind {
 	case "on_enter":
-		request.Entry = before.World.Scenes[scene].OnEnter
-		request.EventID = 0xffff
-		request.World.SceneChanged = false
 		report, runErr = o.session.Enter(inputs)
 	case "event_trigger":
 		id, err := strconv.Atoi(o.event)
 		if err != nil || id < 1 || id > 65535 {
 			return errors.New("请选择有效事件 ID")
 		}
-		request.Entry = before.World.Events[uint16(id)].Trigger
-		request.EventID = uint16(id)
+		eventID = uint16(id)
 		report, runErr = o.session.Trigger(uint16(id), inputs)
 	default:
 		return errors.New("未知原版脚本调用类型")
 	}
 	after := o.session.Snapshot()
 	checkpoint := o.checkpoint
-	record := originalInvocation{Invoked: report.Coverage != "", ActionIntent: originalActionIntent{Kind: kind, SceneNumber: int(scene), EventID: request.EventID, Inputs: append([]palflow.Input(nil), inputs...)}, Mode: "session", Kind: kind, SceneNumber: int(scene), EventID: request.EventID, Report: report, Checkpoint: &checkpoint, SessionBefore: &before, SessionAfter: &after, SessionCommitted: runErr == nil && after.Actions > before.Actions}
-	if record.Invoked {
-		record.Request = &request
-		options := originalSessionOptions()
-		record.Options = &options
+	record := originalInvocation{ActionIntent: originalActionIntent{Kind: kind, SceneNumber: int(scene), EventID: eventID, Inputs: append([]palflow.Input(nil), inputs...)}, Mode: "session", Kind: kind, SceneNumber: int(scene), EventID: eventID, Report: report, Checkpoint: &checkpoint, SessionBefore: &before, SessionAfter: &after, SessionCommitted: runErr == nil && after.Actions > before.Actions}
+	if actual := o.session.LastInvocation(); actual != nil {
+		record.Invoked = true
+		record.Request, record.Options = &actual.Request, &actual.Options
 	}
 	if runErr != nil {
 		record.Error = runErr.Error()
@@ -394,6 +421,7 @@ func (o *originalData) runSession(kind string, inputs []palflow.Input) error {
 	if len(o.history) > 16 {
 		o.history = o.history[len(o.history)-16:]
 	}
+	o.updateViewport()
 	return runErr
 }
 func (o *originalData) export() error {
@@ -403,7 +431,7 @@ func (o *originalData) export() error {
 	if err := o.validateExportPath(); err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(originalEvidence{MGOIdentity: o.mgoIdentity, SpriteDecodeLimit: originalSpriteDecodeLimit, SchemaVersion: 1, Scope: "single bounded script invocation; no full-game verification", Encoding: o.loadedEncoding, Layout: o.loadedLayout, Files: o.game.Files, Invocation: o.history[len(o.history)-1]}, "", "  ")
+	data, err := json.MarshalIndent(originalEvidence{MGOIdentity: o.mgoIdentity, MapIdentities: o.mapIdentities, PaletteIdentity: o.paletteIdentity, SpriteDecodeLimit: originalSpriteDecodeLimit, SchemaVersion: 2, Scope: "bounded script or spatial control action; no full-game verification", Encoding: o.loadedEncoding, Layout: o.loadedLayout, Files: o.game.Files, Invocation: o.history[len(o.history)-1]}, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -444,6 +472,10 @@ func (o *originalData) validateExportPath() error {
 	if o.mgoIdentity != nil {
 		sourceFiles = append(sourceFiles, *o.mgoIdentity)
 	}
+	sourceFiles = append(sourceFiles, o.mapIdentities...)
+	if o.paletteIdentity != nil {
+		sourceFiles = append(sourceFiles, *o.paletteIdentity)
+	}
 	for _, file := range sourceFiles {
 		source, err := filepath.Abs(filepath.Join(o.loadedDirectory, file.Name))
 		if err != nil {
@@ -470,7 +502,7 @@ func (a *workbench) originalView(c *ui.Context) {
 	}
 	o := a.original
 	t := c.Theme()
-	ui.Text(c, "原版数据 · 单次脚本记录").Bold().FontSize(20)
+	ui.Text(c, "原版数据 · 场景与脚本").Bold().FontSize(20)
 	ui.Text(c, "读取 SSS.MKF、DATA.MKF、M.MSG、WORD.DAT。编码与对象布局由你明确选择；这里只执行已支持的触发脚本子集，遇到未知指令立即停止，不等于通关。").TextColor(t.TextMuted)
 	ui.Row(c).Gap(8).Children(func() {
 		ui.TextInput(c.Key("original-directory"), &o.directory).Label("原版数据目录").Grow(1)
@@ -488,9 +520,21 @@ func (a *workbench) originalView(c *ui.Context) {
 		ui.Text(c, "目录、编码或布局已改变；当前数据显示上次导入内容，请重新读取。").TextColor(t.Warning)
 	}
 	if o.assets != nil {
-		ui.Text(c, fmt.Sprintf("MGO 元数据目录可用：%s · 精灵 %d · %d 字节 · SHA256 %s · 单精灵解压上限 %d 字节（未渲染）", o.mgoIdentity.Name, o.assets.Count(), o.mgoIdentity.Size, o.mgoIdentity.SHA256, originalSpriteDecodeLimit)).FontSize(12).TextColor(t.TextMuted)
+		ui.Text(c, fmt.Sprintf("MGO 目录可用：%s · 精灵 %d · %d 字节 · SHA256 %s · 单精灵解压上限 %d 字节", o.mgoIdentity.Name, o.assets.Count(), o.mgoIdentity.Size, o.mgoIdentity.SHA256, originalSpriteDecodeLimit)).FontSize(12).TextColor(t.TextMuted)
 	} else {
 		ui.Text(c, "MGO 元数据目录不可用："+o.assetError).FontSize(12).TextColor(t.Warning)
+	}
+	if o.maps != nil {
+		for _, file := range o.mapIdentities {
+			ui.Text(c, fmt.Sprintf("%s · %d 字节 · SHA256 %s", file.Name, file.Size, file.SHA256)).FontSize(12).TextColor(t.TextMuted)
+		}
+	} else {
+		ui.Text(c, "地图目录不可用："+o.mapError).FontSize(12).TextColor(t.Warning)
+	}
+	if o.palettes == nil {
+		ui.Text(c, "调色板不可用："+o.paletteError).FontSize(12).TextColor(t.Warning)
+	} else {
+		ui.Text(c, fmt.Sprintf("%s · %d 字节 · SHA256 %s", o.paletteIdentity.Name, o.paletteIdentity.Size, o.paletteIdentity.SHA256)).FontSize(12).TextColor(t.TextMuted)
 	}
 	if o.runtimeError != "" {
 		ui.Text(c, "运行表不可用，保留单次诊断模式："+o.runtimeError).FontSize(12).TextColor(t.Warning)
@@ -498,11 +542,12 @@ func (a *workbench) originalView(c *ui.Context) {
 	ui.Row(c).Gap(10).Children(func() {
 		ui.Checkbox(c.Key("original-session-mode"), &o.useSession, "逻辑会话").Disabled(o.runtime == nil || o.session == nil)
 		ui.Checkbox(c.Key("original-assume-entered"), &o.assumeEntered, "声明场景已进入（诊断检查点）").Disabled(o.runtime == nil)
+		ui.NumberInput(c.Key("original-step-budget"), &o.maxSteps, 1, palflow.MaxAllowedSteps, 1).Label("会话工作量上限（重置后生效）").Width(160)
 		if ui.Button(c, "重置到选定场景").Disabled(o.runtime == nil || o.changedSource()).Clicked() {
 			a.report(o.resetSession(), "已重置逻辑检查点；没有验证原游戏可达性")
 		}
 	})
-	ui.Text(c, "逻辑会话只提交完整、输入精确的调用；位置可达性、碰撞、自动脚本和地图推进尚未验证。改变场景选择后须显式重置，不会传送当前会话。").FontSize(12).TextColor(t.TextMuted)
+	ui.Text(c, "会话只提交完整、输入精确的动作。地图操作执行碰撞、调查和自动更新；事件 ID 触发属于诊断调用。改变场景选择后须显式重置，不会传送当前会话。").FontSize(12).TextColor(t.TextMuted)
 	if o.useSession && o.session != nil {
 		snapshot := o.session.Snapshot()
 		ui.Text(c, fmt.Sprintf("当前逻辑场景 %d · 已提交 %d 次调用 · 待执行 OnEnter: %t · 初始检查点 %d / 声明已进入: %t", snapshot.World.Scene, snapshot.Actions, snapshot.NeedsSceneEnter, o.checkpoint.Scene, o.checkpoint.AssumeSceneEntered)).FontSize(12)
@@ -523,6 +568,7 @@ func (a *workbench) originalView(c *ui.Context) {
 		}
 		ui.Text(c, "会话背包（物品 ID×数量）："+strings.Join(labels, "，")).FontSize(12)
 	}
+	a.originalPlayView(c)
 	ids := make([]string, len(o.game.Scenes))
 	for i := range ids {
 		ids[i] = strconv.Itoa(i + 1)
@@ -566,7 +612,7 @@ func (a *workbench) originalView(c *ui.Context) {
 	if !o.useSession {
 		ui.Text(c, "单次诊断每次从导入快照开始；运行表可用时附加初始世界快照，否则世界指令会阻塞。它不会恢复上次调用的世界状态。").FontSize(12).TextColor(t.TextMuted)
 	}
-	ui.Text(c, "显式输入 JSON（按消费顺序）：confirm 0/1；random 1..100；battle 0/1/2=外部给定胜/败/逃跑，不会执行原版战斗。默认 []，缺少输入会保留阻塞原因。").FontSize(12).TextColor(t.TextMuted)
+	ui.Text(c, "显式输入 JSON（按消费顺序）：confirm 0/1；key 1=按键确认；random 0..2147483647（具体指令检查范围）；battle 0/1/2=外部给定胜/败/逃跑，不会执行原版战斗。默认 []，缺少输入会保留阻塞原因。").FontSize(12).TextColor(t.TextMuted)
 	ui.Text(c, `JSON 示例：[{"kind":"confirm","value":1}]；不确定的分支请保留 [] 以查看缺少输入的阻塞点。`).FontSize(12).TextColor(t.TextMuted)
 	ui.TextArea(c.Key("original-inputs"), &o.inputsJSON).Label("原版显式输入 JSON").Font("monospace").Height(85).FillWidth()
 	if len(o.game.Warnings) > 0 {
@@ -581,42 +627,46 @@ func (a *workbench) originalView(c *ui.Context) {
 	if record.Error != "" {
 		ui.Text(c, record.Error).TextColor(t.Warning)
 	}
-	if record.Mode == "session" {
+	if record.Mode == "session" || record.Mode == "control" {
 		ui.Text(c, fmt.Sprintf("逻辑会话状态已提交: %t", record.SessionCommitted)).FontSize(12)
 	}
-	entry := "未调用"
-	if record.Request != nil {
-		entry = fmt.Sprintf("%04x", record.Request.Entry)
-	}
-	ui.Text(c, fmt.Sprintf("单次脚本记录 %d · 场景 %d · 入口 %s · 主指令 %d / 玩家子步骤 %d / 世界 tick %d · 消费 %d 个输入", len(o.history), record.SceneNumber, entry, report.State.ExecutedSteps, report.State.PlayerSubsteps, report.State.WorldTicks, report.InputsConsumed)).Bold()
-	unused := len(report.UnusedInputs)
-	if !record.Invoked {
-		unused = len(record.ActionIntent.Inputs)
-		ui.Text(c, "运行器未调用；显式输入没有消费。").TextColor(t.TextMuted)
-	}
-	ui.Text(c, fmt.Sprintf("未消费显式输入: %d 个", unused)).FontSize(12).TextColor(t.TextMuted)
-	if report.Blocker != nil {
-		b := report.Blocker
-		ui.Text(c, fmt.Sprintf("阻塞 PC %04x · opcode %04x · %s", b.PC, b.Opcode, b.Reason)).TextColor(t.Warning)
-	} else if record.Error != "" && len(report.Trace) == 0 {
-		ui.Text(c, "本次调用被拒绝；没有指令提交。").TextColor(t.TextMuted)
+	if record.Control != nil {
+		a.originalControlReportView(c, record)
 	} else {
-		ui.Text(c, "本次脚本调用已停止；不代表主线或支线完成。").TextColor(t.TextMuted)
-	}
-	if report.BattleOutcomesStubbed {
-		ui.Text(c, "本记录使用了外部给定的战斗结果；未运行战斗程序。").TextColor(t.Warning)
-	}
-	for i, step := range report.Trace {
-		if step.Message == nil {
-			continue
+		entry := "未调用"
+		if record.Request != nil {
+			entry = fmt.Sprintf("%04x", record.Request.Entry)
 		}
-		ui.Column(c.Key(fmt.Sprintf("original-message-%d", i))).Gap(5).Padding(10).FillWidth().Background(t.Surface).Children(func() {
-			ui.Text(c, fmt.Sprintf("PC %04x · 对话索引 %d · 原始解码文本（控制标记未渲染）", step.PC, step.Message.ID)).FontSize(12).TextColor(t.TextMuted)
-			ui.Text(c, step.Message.Text)
-		})
-	}
-	if len(report.DialogueIDs) == 0 {
-		ui.Text(c, "已执行的指令前缀没有对话输出；不会跳过阻塞点搜索后续对白。").TextColor(t.TextMuted)
+		ui.Text(c, fmt.Sprintf("单次脚本记录 %d · 场景 %d · 入口 %s · 主指令 %d / 玩家子步骤 %d / 世界 tick %d · 消费 %d 个输入", len(o.history), record.SceneNumber, entry, report.State.ExecutedSteps, report.State.PlayerSubsteps, report.State.WorldTicks, report.InputsConsumed)).Bold()
+		unused := len(report.UnusedInputs)
+		if !record.Invoked {
+			unused = len(record.ActionIntent.Inputs)
+			ui.Text(c, "运行器未调用；显式输入没有消费。").TextColor(t.TextMuted)
+		}
+		ui.Text(c, fmt.Sprintf("未消费显式输入: %d 个", unused)).FontSize(12).TextColor(t.TextMuted)
+		if report.Blocker != nil {
+			b := report.Blocker
+			ui.Text(c, fmt.Sprintf("阻塞 PC %04x · opcode %04x · %s", b.PC, b.Opcode, b.Reason)).TextColor(t.Warning)
+		} else if record.Error != "" && len(report.Trace) == 0 {
+			ui.Text(c, "本次调用被拒绝；没有指令提交。").TextColor(t.TextMuted)
+		} else {
+			ui.Text(c, "本次脚本调用已停止；不代表主线或支线完成。").TextColor(t.TextMuted)
+		}
+		if report.BattleOutcomesStubbed {
+			ui.Text(c, "本记录使用了外部给定的战斗结果；未运行战斗程序。").TextColor(t.Warning)
+		}
+		for i, step := range report.Trace {
+			if step.Message == nil {
+				continue
+			}
+			ui.Column(c.Key(fmt.Sprintf("original-message-%d", i))).Gap(5).Padding(10).FillWidth().Background(t.Surface).Children(func() {
+				ui.Text(c, fmt.Sprintf("PC %04x · 对话索引 %d · 原始解码文本（控制标记未渲染）", step.PC, step.Message.ID)).FontSize(12).TextColor(t.TextMuted)
+				ui.Text(c, step.Message.Text)
+			})
+		}
+		if len(report.DialogueIDs) == 0 {
+			ui.Text(c, "已执行的指令前缀没有对话输出；不会跳过阻塞点搜索后续对白。").TextColor(t.TextMuted)
+		}
 	}
 	ui.Row(c).Gap(8).Children(func() {
 		ui.TextInput(c.Key("original-export"), &o.exportPath).Label("原版记录导出路径").Grow(1)

@@ -74,7 +74,11 @@ func TestLocalOpeningAndPickupSequence(t *testing.T) {
 	if err != nil {
 		t.Fatal("opening regression requires the documented MGO sample: ", err)
 	}
-	s, err := NewSession(g, r, SessionOptions{Assets: assets, RedactText: true})
+	maps, err := palasset.OpenMaps(filepath.Join(dir, "map.mkf"), filepath.Join(dir, "gop.mkf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := NewSession(g, r, SessionOptions{Assets: assets, Maps: maps, RedactText: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,13 +108,27 @@ func TestLocalOpeningAndPickupSequence(t *testing.T) {
 			t.Fatalf("wrong pickup item%d", item)
 		}
 	}
-	// Report the next real boundary. A blocked departure must retain the entire
-	// already completed opening and inventory, rather than commit its prefix.
+	// Departure and the following resource preparation continue the same world.
 	report, err = s.Trigger(1, nil)
-	if err == nil {
-		t.Fatal("update this boundary regression after departure is implemented")
+	if err != nil || !report.Completed || s.Snapshot().World.Scene != 3 || !s.Snapshot().World.SceneLoadPending || !s.Snapshot().NeedsSceneEnter {
+		t.Fatalf("departure failed: %v", err)
 	}
-	if report.Blocker == nil || report.Blocker.PC != 4669 || report.Blocker.Opcode != 0x50 || !reflect.DeepEqual(before, s.Snapshot()) {
-		t.Fatalf("departure blocker/rollback mismatch: %v", err)
+	if _, err = s.Trigger(63, nil); err == nil {
+		t.Fatal("event bypassed pending scene entry")
+	}
+	if report, err = s.Enter(nil); err != nil || !report.Completed {
+		t.Fatalf("next scene entry: %v", err)
+	}
+	next := s.Snapshot()
+	if next.NeedsSceneEnter || next.World.SceneLoadPending || next.World.SceneResources == nil || next.World.SceneResources.SceneID != 3 || next.World.SceneResources.MapID != 10 {
+		t.Fatal("next scene resources were not loaded")
+	}
+	for _, item := range []uint16{99, 201, 236} {
+		if next.World.Inventory[item] != 1 {
+			t.Fatal("scene transition discarded inventory")
+		}
+	}
+	if s.LastInvocation() == nil || s.LastInvocation().Request.World.SceneResources.MapID != 10 {
+		t.Fatal("export request differs from prepared invocation")
 	}
 }

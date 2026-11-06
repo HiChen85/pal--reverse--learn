@@ -1,6 +1,7 @@
 package palasset
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
@@ -194,6 +195,178 @@ func TestCatalogCacheBoundAndConcurrentReaders(t *testing.T) {
 	for _, got := range c.cache {
 		if got.Frames[0].Offset != 6 || got.SHA256 != wantDigest {
 			t.Fatal("cached data changed by concurrent callers")
+		}
+	}
+}
+
+func checkedSprite(frames ...[]byte) []byte {
+	words := len(frames) + 1
+	out := make([]byte, words*2)
+	for i, frame := range frames {
+		binary.LittleEndian.PutUint16(out[i*2:], uint16(len(out)/2))
+		out = append(out, frame...)
+		if len(out)%2 != 0 {
+			out = append(out, 0)
+		}
+	}
+	binary.LittleEndian.PutUint16(out[len(frames)*2:], uint16(len(out)/2))
+	return out
+}
+
+func TestCatalogFrameChecksRLEAndOwnsBytes(t *testing.T) {
+	bitmap := rleBytes(2, 1, 2, 0, 19)
+	plain := checkedSprite(bitmap, rleBytes(1, 1, 0x81))
+	c, path := openFixture(t, mkfBytes(rawSprite(plain)), 1024)
+	if err := os.WriteFile(path, []byte("changed"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	data, err := c.Frame(0, 0)
+	if err != nil || !bytes.Equal(data[:len(bitmap)], bitmap) || len(data) != len(bitmap)+1 {
+		t.Fatalf("checked MGO frame differs: %x %v", data, err)
+	}
+	data[0] = 0xff
+	again, err := c.Frame(0, 0)
+	if err != nil || again[0] != 2 {
+		t.Fatal("returned frame aliases snapshot", err)
+	}
+	img, err := DecodeRLE(again, 2)
+	if err != nil || !img.Opaque[0] || img.Pix[0] != 0 {
+		t.Fatal("literal zero lost coverage", err)
+	}
+	for _, index := range []int{-1, 2, 65535} {
+		if _, err := c.Frame(0, index); err == nil {
+			t.Errorf("invalid frame %d accepted", index)
+		}
+	}
+	if _, err := c.Frame(1, 0); err == nil {
+		t.Fatal("invalid sprite accepted")
+	}
+	var nilCatalog *SpriteCatalog
+	if _, err := nilCatalog.Frame(0, 0); err == nil {
+		t.Fatal("nil catalog returned a frame")
+	}
+	// Metadata certifies spans only. The on-demand pixel interface must reject
+	// a valid directory around an incomplete or excessive RLE payload.
+	for _, malformed := range [][]byte{rleBytes(2, 1, 1, 9), rleBytes(1, 1, 2, 7, 8), rleBytes(65535, 65535), rleBytes(1, 1, 0, 0x80)} {
+		bad, _ := openFixture(t, mkfBytes(rawSprite(checkedSprite(malformed))), 1024)
+		info, err := bad.Sprite(0)
+		if err != nil || !info.Frames[0].Safe {
+			t.Fatal("metadata span unexpectedly rejected", err)
+		}
+		if _, err := bad.Frame(0, 0); err == nil {
+			t.Errorf("malformed bitmap accepted: %x", malformed)
+		}
+	}
+	badSpan := append([]byte(nil), plain...)
+	binary.LittleEndian.PutUint16(badSpan[2:], 0xffff)
+	bad, _ := openFixture(t, mkfBytes(rawSprite(badSpan)), 1024)
+	if _, err := bad.Frame(0, 0); err == nil {
+		t.Fatal("unsafe span accepted")
+	}
+	bounded, _ := openFixture(t, mkfBytes(rawSprite(plain)), len(plain)-1)
+	if _, err := bounded.Frame(0, 0); err == nil {
+		t.Fatal("frame bypassed YJ1 output bound")
+	}
+}
+
+func TestTerminalZeroEndRequiresCompleteRLEAndAtMostOnePaddingByte(t *testing.T) {
+	bitmap := rleBytes(2, 1, 2, 0, 19) // Seven bytes plus one alignment byte.
+	plain := checkedSprite(rleBytes(1, 1, 1, 9), bitmap)
+	binary.LittleEndian.PutUint16(plain[4:], 0)
+	info := inspectSprite(0, 0, plain)
+	frame := info.Frames[1]
+	if len(info.UnsafeFrames) != 0 || !frame.Safe || !frame.TerminalFallback || frame.End-frame.Offset != len(bitmap) || info.Frames[0].TerminalFallback {
+		t.Fatalf("validated terminal frame not recovered: %+v", info)
+	}
+	c, _ := openFixture(t, mkfBytes(rawSprite(plain)), 1024)
+	data, err := c.Frame(0, 1)
+	if err != nil || !bytes.Equal(data, bitmap) {
+		t.Fatalf("inferred terminal bytes differ: %x %v", data, err)
+	}
+	for name, mutate := range map[string]func([]byte) []byte{
+		"two padding bytes":    func(data []byte) []byte { return append(data, 1) },
+		"two extra bytes":      func(data []byte) []byte { return append(data, 1, 2) },
+		"truncated payload":    func(data []byte) []byte { return data[:len(data)-3] },
+		"start in directory":   func(data []byte) []byte { binary.LittleEndian.PutUint16(data[2:], 1); return data },
+		"start outside sprite": func(data []byte) []byte { binary.LittleEndian.PutUint16(data[2:], 0xffff); return data },
+		"nonterminal zero":     func(data []byte) []byte { binary.LittleEndian.PutUint16(data[2:], 0); return data },
+	} {
+		t.Run(name, func(t *testing.T) {
+			bad := mutate(append([]byte(nil), plain...))
+			info := inspectSprite(0, 0, bad)
+			if len(info.UnsafeFrames) == 0 || info.Frames[1].TerminalFallback {
+				t.Fatalf("invalid terminal frame repaired: %+v", info)
+			}
+		})
+	}
+}
+
+func TestCatalogFramesConcurrentReaders(t *testing.T) {
+	plain := checkedSprite(rleBytes(2, 1, 2, 0, 19))
+	c, _ := openFixture(t, mkfBytes(rawSprite(plain)), 1024)
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 40 {
+				data, err := c.Frame(0, 0)
+				if err != nil || data[0] != 2 {
+					t.Error("concurrent frame", err)
+					return
+				}
+				data[0] = 99
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestMGOLocalPixels(t *testing.T) {
+	dir := os.Getenv("PAL_PIXEL_ASSET_DIR")
+	if dir == "" {
+		t.Skip("PAL_PIXEL_ASSET_DIR is not set")
+	}
+	c, err := OpenMGO(filepath.Join(dir, "mgo.mkf"), 1<<20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []uint16{1, 19, 68, 95, 142, 571} {
+		info, err := c.Sprite(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ok, fallback, rejected := 0, 0, 0
+		for _, frame := range info.Frames {
+			if frame.TerminalFallback {
+				fallback++
+			}
+			data, err := c.Frame(id, frame.Index)
+			if !frame.Safe {
+				if err == nil {
+					t.Fatal("unsafe real MGO frame accepted")
+				}
+				rejected++
+				continue
+			}
+			if err != nil {
+				t.Fatalf("safe span has invalid real bitmap id=%d frame=%d: %v", id, frame.Index, err)
+			}
+			img, err := DecodeRLE(data, 1<<20)
+			if err != nil || img.Width < 1 || img.Height < 1 {
+				t.Fatal("real MGO RLE differs", err)
+			}
+			ok++
+		}
+		t.Logf("MGO id=%d decoded=%d frames=%d validRLE=%d terminalFallback=%d rejected=%d unsafe=%v", id, info.DecodedSize, info.FrameCount, ok, fallback, rejected, info.UnsafeFrames)
+		if c.SourceSHA256() == "a9f9fc0ceeccb354906a96eaf6003f9c7ece8db6789856144201d926f5ff76b1" {
+			if id == 571 {
+				if ok != 0 || rejected != 2 || fallback != 0 {
+					t.Fatal("known nonterminal broken offsets were repaired")
+				}
+			} else if ok != int(info.FrameCount) || fallback != 1 || rejected != 0 {
+				t.Fatal("known valid MGO terminal frame differs")
+			}
 		}
 	}
 }

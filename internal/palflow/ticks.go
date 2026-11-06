@@ -4,7 +4,7 @@ import "fmt"
 
 func ticksOpcodeName(op uint16) string {
 	if op == 0x0009 {
-		return "wait frames with bounded auto scripts, without triggers or party gestures"
+		return "wait frames with bounded auto scripts, optional triggers and standing gestures"
 	}
 	return ""
 }
@@ -22,12 +22,6 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 	if step == nil {
 		return true, fmt.Errorf("frame wait requires a trace step")
 	}
-	if inst.Operands[1] != 0 {
-		return true, fmt.Errorf("frame wait with trigger updates requested by operand 1 is not modeled")
-	}
-	if inst.Operands[2] != 0 {
-		return true, fmt.Errorf("frame wait with party gestures requested by operand 2 is not modeled")
-	}
 	if state.World == nil {
 		return true, fmt.Errorf("frame wait requires an explicit world snapshot")
 	}
@@ -41,31 +35,8 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 		return true, err
 	}
 	world := state.World
-	if world.Scene == 0 || world.Scene >= 300 {
-		return true, fmt.Errorf("frame wait scene %d requires a current and next scene boundary within 1..300", world.Scene)
-	}
-	scene, ok := world.Scenes[world.Scene]
-	if !ok {
-		return true, fmt.Errorf("frame wait current scene %d is absent from the world snapshot", world.Scene)
-	}
-	nextScene, ok := world.Scenes[world.Scene+1]
-	if !ok {
-		return true, fmt.Errorf("frame wait next scene %d boundary is absent from the world snapshot", world.Scene+1)
-	}
-	if nextScene.EventStart < scene.EventStart {
-		return true, fmt.Errorf("frame wait scene %d has descending event boundaries %d..%d", world.Scene, scene.EventStart, nextScene.EventStart)
-	}
-	var candidates []uint16
-	for id := int(scene.EventStart) + 1; id <= int(nextScene.EventStart); id++ {
-		event, ok := world.Events[uint16(id)]
-		if !ok {
-			return true, fmt.Errorf("frame wait scene %d event %d is absent from the world snapshot", world.Scene, id)
-		}
-		// Supported auto instructions cannot give another event a new script.
-		// Keeping inactive candidates preserves later activation in event order.
-		if event.AutoScript != 0 {
-			candidates = append(candidates, uint16(id))
-		}
+	if _, err := sceneEventIDs(world, "frame wait"); err != nil {
+		return true, err
 	}
 	ticks := inst.Operands[0]
 	if ticks == 0 {
@@ -77,16 +48,41 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 	// Subtract each component rather than adding caller-supplied counters, so
 	// malformed extreme counters cannot overflow the combined budget check.
 	remaining := r.options.MaxSteps
-	for _, used := range []int{state.ExecutedSteps, state.PlayerSubsteps, state.WorldTicks, state.AutoSubsteps, int(ticks), 1} {
-		if used > remaining {
+	for _, used := range []int{state.ExecutedSteps, state.PlayerSubsteps, state.WorldTicks, state.AutoSubsteps, state.CombatWork, int(ticks), 1} {
+		if used < 0 || used > remaining {
 			return true, fmt.Errorf("frame wait of %d ticks exceeds the combined instruction, player substep, and world tick budget of %d", ticks, r.options.MaxSteps)
 		}
 		remaining -= used
 	}
 	working := *state
 	working.World = CloneWorld(world)
-	scheduler := autoScheduler{runner: r, state: &working, inputs: inputs, remaining: remaining}
+	working.Frames = append([]Frame(nil), state.Frames...)
+	// Account for all requested ticks before running any inline trigger. Their
+	// shared budget must include future outer ticks as well as the current one.
+	working.WorldTicks += int(ticks)
+	scheduler := autoScheduler{runner: r, state: &working, inputs: inputs, remaining: remaining, reserved: 1}
+	var updates []WorldUpdateRecord
 	for tick := 1; tick <= int(ticks); tick++ {
+		if inst.Operands[2] != 0 {
+			if err := updatePartyGestures(r.source, working.World, false); err != nil {
+				return true, fmt.Errorf("frame wait party gestures at tick %d: %w", tick, err)
+			}
+		}
+		if inst.Operands[1] != 0 {
+			fromAuto, beforeFrame := len(scheduler.steps), working.World.FrameNum
+			calls, err := r.updateTriggeredTick(&working, &scheduler, inputs, uint16(tick))
+			if err != nil {
+				return true, fmt.Errorf("trigger-enabled frame wait at PC %04x, tick %d: %w", frame.PC, tick, err)
+			}
+			updates = append(updates, WorldUpdateRecord{Tick: uint16(tick), BeforeFrame: beforeFrame, AfterFrame: working.World.FrameNum, TriggerSteps: calls, AutoSteps: append([]AutoStep(nil), scheduler.steps[fromAuto:]...)})
+			continue
+		}
+		// Auto scripts may replace another event's entry, so candidates include
+		// every current-scene event and are recomputed after scene transitions.
+		candidates, err := sceneEventIDs(working.World, "frame wait")
+		if err != nil {
+			return true, err
+		}
 		active, interrupted := false, false
 		for _, eventID := range candidates {
 			event := working.World.Events[eventID]
@@ -105,27 +101,59 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 			}
 		}
 		if !active {
-			// No supported instruction can activate anything without an active
-			// auto script, so the remaining counter-only updates are equivalent.
-			advanceWorldCounters(working.World, uint16(int(ticks)-tick+1))
-			break
+			// Standing gestures change the static step phase on every tick.
+			// Only gesture-free waits may fold their remaining empty updates.
+			if inst.Operands[2] == 0 {
+				advanceWorldCounters(working.World, uint16(int(ticks)-tick+1))
+				break
+			}
+			advanceWorldCounters(working.World, 1)
+			continue
 		}
 		if !interrupted {
 			advanceWorldCounters(working.World, 1)
 		}
 	}
-	frames := append([]Frame(nil), state.Frames...)
-	frames[frameIndex].PC = nextPC
-	state.World = working.World
-	state.Frames = frames
-	state.WorldTicks += int(ticks)
-	state.AutoSubsteps = working.AutoSubsteps
-	state.InputIndex = working.InputIndex
+	working.Frames[frameIndex] = frame
+	working.Frames[frameIndex].PC = nextPC
+	*state = working
 	step.Ticks = ticks
 	step.AutoSteps = scheduler.steps
+	if inst.Operands[1] != 0 {
+		step.AutoSteps = nil
+		step.WorldUpdates = updates
+	}
 	step.Screen = &ScreenRecord{Kind: "frame_wait", ClearDialogRequested: true, Rendered: false}
-	step.Effect = fmt.Sprintf("request %d world ticks with %d bounded auto instructions, without triggers or party gestures; request dialog clear and redraw", ticks, len(scheduler.steps))
+	step.Effect = fmt.Sprintf("request %d world ticks with %d bounded auto instructions; standing gestures=%t, triggers enabled=%t; request dialog clear and redraw", ticks, len(scheduler.steps), inst.Operands[2] != 0, inst.Operands[1] != 0)
 	return true, nil
+}
+
+func sceneEventIDs(world *WorldState, context string) ([]uint16, error) {
+	if world == nil {
+		return nil, fmt.Errorf("%s requires an explicit world snapshot", context)
+	}
+	if world.Scene == 0 || world.Scene >= 300 {
+		return nil, fmt.Errorf("%s scene %d requires a current and next scene boundary within 1..300", context, world.Scene)
+	}
+	scene, ok := world.Scenes[world.Scene]
+	if !ok {
+		return nil, fmt.Errorf("%s current scene %d is absent from the world snapshot", context, world.Scene)
+	}
+	next, ok := world.Scenes[world.Scene+1]
+	if !ok {
+		return nil, fmt.Errorf("%s next scene %d boundary is absent from the world snapshot", context, world.Scene+1)
+	}
+	if next.EventStart < scene.EventStart {
+		return nil, fmt.Errorf("%s scene %d has descending event boundaries %d..%d", context, world.Scene, scene.EventStart, next.EventStart)
+	}
+	ids := make([]uint16, 0, int(next.EventStart)-int(scene.EventStart))
+	for id := int(scene.EventStart) + 1; id <= int(next.EventStart); id++ {
+		if _, ok := world.Events[uint16(id)]; !ok {
+			return nil, fmt.Errorf("%s scene %d event %d is absent from the world snapshot", context, world.Scene, id)
+		}
+		ids = append(ids, uint16(id))
+	}
+	return ids, nil
 }
 
 func advanceWorldCounters(world *WorldState, ticks uint16) {

@@ -5,18 +5,20 @@ import "fmt"
 // AutoStep is one autoscript instruction inside a trigger-disabled frame wait.
 // Work includes the instruction and, when it changes position, one movement.
 type AutoStep struct {
-	Tick     uint16         `json:"tick"`
-	FrameNum uint32         `json:"frame_num"`
-	EventID  uint16         `json:"event_id"`
-	PC       uint16         `json:"pc"`
-	Opcode   uint16         `json:"opcode"`
-	Operands [3]uint16      `json:"operands"`
-	NextPC   uint16         `json:"next_pc"`
-	Effect   string         `json:"effect"`
-	Work     uint8          `json:"work"`
-	Input    *InputUse      `json:"input,omitempty"`
-	Before   *WorldPosition `json:"before,omitempty"`
-	After    *WorldPosition `json:"after,omitempty"`
+	Instruction  *TraceStep     `json:"instruction,omitempty"`
+	TriggerSteps []TraceStep    `json:"trigger_steps,omitempty"`
+	Tick         uint16         `json:"tick"`
+	FrameNum     uint32         `json:"frame_num"`
+	EventID      uint16         `json:"event_id"`
+	PC           uint16         `json:"pc"`
+	Opcode       uint16         `json:"opcode"`
+	Operands     [3]uint16      `json:"operands"`
+	NextPC       uint16         `json:"next_pc"`
+	Effect       string         `json:"effect"`
+	Work         uint8          `json:"work"`
+	Input        *InputUse      `json:"input,omitempty"`
+	Before       *WorldPosition `json:"before,omitempty"`
+	After        *WorldPosition `json:"after,omitempty"`
 }
 
 // The scheduler works on a detached State. Its caller commits it only after the
@@ -26,15 +28,30 @@ type autoScheduler struct {
 	state     *State
 	inputs    []Input
 	remaining int
+	reserved  int
 	steps     []AutoStep
 }
 
 func (a *autoScheduler) spend(work int, event, pc uint16) error {
-	if work > a.remaining {
+	if work < 0 || work > a.remaining {
 		return fmt.Errorf("auto script event %d PC %04x exceeds the combined execution budget", event, pc)
 	}
 	a.remaining -= work
 	a.state.AutoSubsteps += work
+	return nil
+}
+
+// syncRemaining includes work performed inside interpreted operations and
+// inline trigger calls, as well as the outer wait instruction's reservation.
+func (a *autoScheduler) syncRemaining(event, pc uint16) error {
+	remaining := a.runner.options.MaxSteps
+	for _, used := range []int{a.state.ExecutedSteps, a.state.PlayerSubsteps, a.state.WorldTicks, a.state.AutoSubsteps, a.state.CombatWork, a.reserved} {
+		if used < 0 || used > remaining {
+			return fmt.Errorf("auto script event %d PC %04x exceeds the combined execution budget", event, pc)
+		}
+		remaining -= used
+	}
+	a.remaining = remaining
 	return nil
 }
 
@@ -44,9 +61,9 @@ func (a *autoScheduler) run(eventID, tick uint16) error {
 	if a.runner.source == nil {
 		return fmt.Errorf("auto script event %d requires an instruction source", eventID)
 	}
-	world := a.state.World
-	pc := world.Events[eventID].AutoScript
+	pc := a.state.World.Events[eventID].AutoScript
 	for {
+		world := a.state.World
 		if err := a.spend(1, eventID, pc); err != nil {
 			return err
 		}
@@ -91,7 +108,18 @@ func (a *autoScheduler) run(eventID, tick uint16) error {
 				step.Effect = "idle threshold reached; reset auto counter and advance for the next tick"
 			}
 		case 4:
-			return fmt.Errorf("auto script event %d PC %04x opcode 0004 requires unsupported trigger subroutine scheduling", eventID, pc)
+			context := x[1]
+			if context == 0 {
+				context = eventID
+			}
+			step.TriggerSteps, err = a.runner.runTriggerInline(a.state, x[0], context, a.inputs, a.reserved)
+			if err == nil {
+				err = a.syncRemaining(eventID, pc)
+			}
+			if err == nil {
+				err = advance()
+			}
+			step.Effect = "run bounded trigger subroutine and advance auto entry for the next tick"
 		case 6:
 			step.Input, err = consume(a.state, a.inputs, InputRandom)
 			if err != nil {
@@ -117,24 +145,6 @@ func (a *autoScheduler) run(eventID, tick uint16) error {
 				step.Effect = "increment auto idle counter and retain entry"
 			}
 			world.Events[eventID] = self
-		case 0x10:
-			before := WorldPosition{X: self.X, Y: self.Y}
-			arrived := walkAutoNPC(&self, x)
-			after := WorldPosition{X: self.X, Y: self.Y}
-			if before != after {
-				if err = a.spend(1, eventID, pc); err != nil {
-					break
-				}
-				step.Work++
-			}
-			step.Before, step.After = &before, &after
-			world.Events[eventID] = self
-			if arrived {
-				err = advance()
-				step.Effect = "NPC reached tile target; reset gesture and advance"
-			} else {
-				step.Effect = "NPC walked toward tile target at speed 3; retain entry"
-			}
 		case 0x49:
 			step.Effect = "operand 0 zero leaves event state unchanged"
 			if x[0] != 0 {
@@ -160,12 +170,55 @@ func (a *autoScheduler) run(eventID, tick uint16) error {
 			}
 			err = advance()
 			step.Effect = "DOS auto message instruction advances without displaying text"
+		case 0xa7:
+			err = advance()
+			step.Effect = "auto opcode 00a7 advances without invoking trigger or interpreted behavior"
 		default:
-			return fmt.Errorf("auto script event %d PC %04x opcode %04x is unsupported", eventID, pc, inst.Opcode)
+			child := TraceStep{PC: pc, Opcode: inst.Opcode, Operands: x, EventID: eventID, Depth: len(a.state.Frames)}
+			outerFrames := append([]Frame(nil), a.state.Frames...)
+			if len(outerFrames) == 0 {
+				return fmt.Errorf("auto script event %d PC %04x requires an enclosing script frame", eventID, pc)
+			}
+			frameIndex := len(outerFrames) - 1
+			a.state.Frames = append([]Frame(nil), outerFrames...)
+			a.state.Frames[frameIndex] = Frame{PC: pc, Entry: pc, NextEntry: pc, EventID: eventID}
+			// The auto instruction was already charged by spend. Interpreted
+			// handlers reserve one current instruction themselves; compensate
+			// for that duplicate while retaining all enclosing reservations.
+			interpreted := *a.runner
+			interpreted.options.MaxSteps -= a.reserved - 1
+			handled, interpretErr := interpreted.evaluateInterpreted(a.state, &child, inst, a.inputs)
+			if interpretErr != nil {
+				err = interpretErr
+			} else if !handled {
+				return fmt.Errorf("auto script event %d PC %04x opcode %04x is unsupported by PAL_InterpretInstruction", eventID, pc, inst.Opcode)
+			} else if len(a.state.Frames) != len(outerFrames) {
+				err = fmt.Errorf("interpreted auto instruction changed trigger frame depth")
+			} else {
+				step.NextPC = a.state.Frames[frameIndex].PC
+				child.NextPC = step.NextPC
+				step.Effect, step.Input = child.Effect, child.Input
+				step.Instruction = &child
+				if movementOpcodeName(inst.Opcode) != "" {
+					before := WorldPosition{X: self.X, Y: self.Y}
+					afterEvent := a.state.World.Events[eventID]
+					after := WorldPosition{X: afterEvent.X, Y: afterEvent.Y}
+					step.Before, step.After = &before, &after
+					if before != after {
+						err = a.spend(1, eventID, pc)
+						step.Work++
+					}
+				}
+			}
+			a.state.Frames = outerFrames
+			if err == nil {
+				err = a.syncRemaining(eventID, pc)
+			}
 		}
 		if err != nil {
 			return fmt.Errorf("auto script event %d PC %04x: %w", eventID, pc, err)
 		}
+		world = a.state.World
 		self = world.Events[eventID]
 		self.AutoScript = step.NextPC
 		world.Events[eventID] = self
@@ -180,47 +233,7 @@ func (a *autoScheduler) run(eventID, tick uint16) error {
 // walkAutoNPC reproduces the coordinate and frame arithmetic of opcode 0010.
 // It has no collision checks, route finding, trigger processing, or rendering.
 func walkAutoNPC(event *WorldEvent, target [3]uint16) bool {
-	x, y := int(target[0])*32+int(target[2])*16, int(target[1])*16+int(target[2])*8
-	dx, dy := x-int(event.X), y-int(event.Y)
-	if dy < 0 {
-		event.Direction = 2
-		if dx < 0 {
-			event.Direction = 1
-		}
-	} else {
-		event.Direction = 3
-		if dx < 0 {
-			event.Direction = 0
-		}
-	}
-	if absAutoOffset(dx) < 6 || absAutoOffset(dy) < 6 {
-		event.X, event.Y = uint16(x), uint16(y)
-	} else {
-		stepX, stepY := uint16(6), uint16(3)
-		if event.Direction == 0 || event.Direction == 1 {
-			stepX = 65530
-		}
-		if event.Direction == 1 || event.Direction == 2 {
-			stepY = 65533
-		}
-		event.X, event.Y = event.X+stepX, event.Y+stepY
-		frames := event.SpriteFrames
-		if frames == 3 {
-			frames = 4
-		}
-		if frames == 0 {
-			frames = event.SpriteFramesAuto
-		}
-		if frames != 0 {
-			event.Frame++
-			event.Frame %= frames
-		}
-	}
-	arrived := int(event.X) == x && int(event.Y) == y
-	if arrived {
-		event.Frame = 0
-	}
-	return arrived
+	return walkNPCTo(event, target, 3)
 }
 
 func absAutoOffset(n int) int {

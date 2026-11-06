@@ -178,7 +178,7 @@ func TestBlockedInstructionDoesNotCommitStateOrInput(t *testing.T) {
 		{"wait_updates_world", tables{scripts: []Instruction{ins(0), ins(9)}}, Request{Entry: 1}, "world snapshot"},
 		{"missing_input", tables{scripts: []Instruction{ins(0), ins(6, 50, 4)}}, Request{Entry: 1}, "explicit random"},
 		{"wrong_input", tables{scripts: []Instruction{ins(0), ins(6, 50, 4)}}, Request{Entry: 1, Inputs: []Input{{InputConfirm, 1}}}, "expected random"},
-		{"invalid_input", tables{scripts: []Instruction{ins(0), ins(6, 50, 4)}}, Request{Entry: 1, Inputs: []Input{{InputRandom, 101}}}, "invalid random"},
+		{"invalid_input", tables{scripts: []Instruction{ins(0), ins(6, 50, 4)}}, Request{Entry: 1, Inputs: []Input{{InputRandom, 102}}}, "invalid random"},
 		{"missing_counter", tables{scripts: []Instruction{ins(0), ins(3, 1, 2)}}, Request{Entry: 1, EventID: 7}, "must be supplied"},
 		{"missing_message", tables{scripts: []Instruction{ins(0), ins(0xffff, 5)}}, Request{Entry: 1}, "message 5"},
 	}
@@ -323,7 +323,7 @@ func TestGestureRedrawBlocksAndPresentationFailureRollsBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	report, err := runner.Trace(Request{Entry: 1})
-	if err == nil || report.Blocker.PC != 2 || !strings.Contains(report.Blocker.Reason, "PAL_UpdatePartyGestures") || len(report.Trace) != 1 || len(report.DialogueIDs) != 0 || report.State.Frames[0].PC != 2 || !report.State.MusicKnown || report.State.Music != 12 {
+	if err == nil || report.Blocker.PC != 2 || !strings.Contains(report.Blocker.Reason, "standing gestures") || len(report.Trace) != 1 || len(report.DialogueIDs) != 0 || report.State.Frames[0].PC != 2 || !report.State.MusicKnown || report.State.Music != 12 {
 		t.Fatalf("gesture redraw did not preserve prefix/block: %+v %v", report, err)
 	}
 	full := make([]Instruction, 1<<16)
@@ -335,5 +335,14 @@ func TestGestureRedrawBlocksAndPresentationFailureRollsBack(t *testing.T) {
 	report, err = runner.Trace(Request{Entry: 65535})
 	if err == nil || report.State.MusicKnown || report.State.BattleMusicKnown || report.State.Music != 0 || report.State.Frames[0].PC != 65535 || len(report.Trace) != 0 {
 		t.Fatal("failed music instruction committed config or wrapped PC")
+	}
+}
+
+func TestGestureRedrawRestoresStandingWithoutWorldTick(t *testing.T) {
+	w := partyWalkFixture().World
+	runner, _ := New(tables{scripts: []Instruction{ins(0), ins(5, 0, 1, 1), ins(0)}}, Options{})
+	r, err := runner.Trace(Request{Entry: 1, World: w})
+	if err != nil || r.State.World.PartyFrames[0] != 3 || r.State.World.PartyStepFrame != 2 || r.State.World.FrameNum != 100 || r.State.World.ViewportX != 23 || w.PartyFrames[0] != 17 {
+		t.Fatal("redraw standing gesture effect or atomicity mismatch", err)
 	}
 }

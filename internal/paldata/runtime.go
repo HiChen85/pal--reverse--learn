@@ -61,14 +61,26 @@ type RuntimeTables struct {
 	Enemies []Enemy
 	// EnemyTeams contains object IDs, not indexes into Enemies. Both 0 and
 	// 0xffff are empty slots. Resolve an occupied slot through Game.Objects[id][0].
-	EnemyTeams [][EnemyTeamSize]uint16
-	Stores     [][StoreSize]uint16
-	Source     FileInfo
+	EnemyTeams   [][EnemyTeamSize]uint16
+	Stores       [][StoreSize]uint16
+	Magics       []Magic
+	Battlefields []Battlefield
+	// Each row contains one (level, magic object ID) pair for each of the
+	// five playable roles. Role slot five has no level-up magic column.
+	LevelUpMagics     [][PlayableRoleCount]LevelUpMagic
+	BattleEffectIndex [BattleSpriteCount][2]uint16
+	// EnemyPositions[enemy slot][team size - 1], as indexed by the engine.
+	EnemyPositions [EnemyTeamSize][EnemyTeamSize]Position
+	LevelUpExp     [MaxLevel + 1]uint16
+	// HasBattleTables distinguishes a complete import from hand-built or
+	// legacy table snapshots, whose fixed arrays may also contain zeroes.
+	HasBattleTables bool
+	Source          FileInfo
 }
 
 // LoadRuntime imports only one unambiguously named, regular DATA.MKF file.
-// These four table layouts are shared by the requested DOS/Windows import
-// profiles. This function neither guesses a release nor decodes other resources.
+// The layouts are shared by the requested DOS/Windows import profiles. This
+// function neither guesses a release nor decodes other resource archives.
 func LoadRuntime(dir string) (*RuntimeTables, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -102,18 +114,21 @@ func LoadRuntime(dir string) (*RuntimeTables, error) {
 	if err != nil {
 		return nil, fmt.Errorf("paldata runtime DATA.MKF: %w", err)
 	}
-	if archive.Count() < 4 || archive.Count() > 4096 {
-		return nil, fmt.Errorf("paldata runtime DATA.MKF: chunk count %d outside 4..4096", archive.Count())
+	if archive.Count() < 15 || archive.Count() > 4096 {
+		return nil, fmt.Errorf("paldata runtime DATA.MKF: chunk count %d outside 15..4096", archive.Count())
 	}
-	var chunks [4][]byte
-	for i := range chunks {
+	var chunks [15][]byte
+	for _, i := range []int{0, 1, 2, 3, 4, 5, 6, 11, 13, 14} {
 		chunks[i], err = archive.ReadChunk(i)
 		if err != nil {
 			return nil, fmt.Errorf("paldata runtime DATA.MKF chunk %d: %w", i, err)
 		}
 	}
-	tables, err := decodeRuntime(chunks)
+	tables, err := decodeRuntime([4][]byte{chunks[0], chunks[1], chunks[2], chunks[3]})
 	if err != nil {
+		return nil, err
+	}
+	if err := tables.decodeBattleTables(chunks); err != nil {
 		return nil, err
 	}
 	sum := sha256.Sum256(data)
@@ -238,6 +253,9 @@ func (r *RuntimeTables) ValidateReferences(g *Game) error {
 				return err
 			}
 		}
+	}
+	if r.HasBattleTables {
+		return r.validateBattleReferences(g)
 	}
 	return nil
 }

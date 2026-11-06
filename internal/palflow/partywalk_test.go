@@ -1,6 +1,7 @@
 package palflow
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -17,6 +18,103 @@ func partyWalkFixture() State {
 		FrameNum: 100, ChaseCycles: 10, ChaseRange: 4,
 	}
 	return State{World: w, Frames: []Frame{{PC: 0x1234, Entry: 0x1230, NextEntry: 0x1230, EventID: 2}}, CurEquipPart: -1, ScriptSuccess: true}
+}
+
+type collisionQuery struct {
+	Position      WorldPosition
+	Self          uint16
+	Events, Range bool
+}
+
+type partyObstacleSource struct {
+	autoSource
+	queries []collisionQuery
+	blocked map[int]bool
+	failAt  int
+}
+
+func (s *partyObstacleSource) IsObstacle(_ *WorldState, pos WorldPosition, self uint16, events, checkRange bool) (bool, error) {
+	s.queries = append(s.queries, collisionQuery{pos, self, events, checkRange})
+	if len(s.queries) == s.failAt {
+		return false, fmt.Errorf("explicit collision failure")
+	}
+	return s.blocked[len(s.queries)], nil
+}
+
+func multiPartyWalkFixture() State {
+	state := partyWalkFixture()
+	w := state.World
+	w.PartyRoles = []uint16{0, 1, 2}
+	w.FollowerSprites = []uint16{40, 41}
+	w.PartyPositions = make([]WorldPosition, 5)
+	w.PartyFrames = make([]uint16, 5)
+	raw := [75]uint16{}
+	raw[64] = 4
+	w.Roles[1], w.Roles[2] = raw, [75]uint16{}
+	return state
+}
+
+func TestPartyWalkAllMembersFollowersAndCollisionFallback(t *testing.T) {
+	state := multiPartyWalkFixture()
+	state.World.ViewportX, state.World.ViewportY = 28, 14
+	source := &partyObstacleSource{blocked: map[int]bool{2: true}}
+	step, err := runPartyWalk(t, &state, source, 2, [3]uint16{1, 1}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := state.World
+	if !reflect.DeepEqual(w.PartyFrames, []uint16{9, 4, 3, 6, 9}) || !reflect.DeepEqual(w.PartyPositions, []WorldPosition{{}, {X: 65530, Y: 65532}, {X: 65514, Y: 4}, {X: 65516, Y: 6}, {X: 65517, Y: 7}}) {
+		t.Fatalf("multi-party formation/standing gestures = frames%v positions%v", w.PartyFrames, w.PartyPositions)
+	}
+	wantQueries := []collisionQuery{{WorldPosition{X: 26, Y: 12}, 0, true, true}, {WorldPosition{X: 26, Y: 28}, 0, true, true}}
+	if !reflect.DeepEqual(source.queries, wantQueries) || len(step.PartyWalk.Steps) != 1 || w.PartyStepFrame != 2 {
+		t.Fatalf("wrong collision routing or phase: queries=%+v state=%+v", source.queries, w)
+	}
+}
+
+func TestPartyFollowerAnimationUsesOppositeWalkingPhase(t *testing.T) {
+	for _, phase := range []uint16{0, 1, 2, 3} {
+		state := multiPartyWalkFixture()
+		state.World.PartyStepFrame = phase
+		source := &partyObstacleSource{}
+		if err := updatePartyGestures(source, state.World, true); err != nil {
+			t.Fatal(err)
+		}
+		newPhase := (phase + 1) % 4
+		leader, follower := uint16(0), uint16(0)
+		if newPhase&1 != 0 {
+			leader, follower = (newPhase+1)/2, 3-(newPhase+1)/2
+		}
+		frames := state.World.PartyFrames
+		if frames[0] != 3+leader || frames[1] != 8+newPhase || frames[2] != 6+leader || frames[3] != 9+follower || frames[4] != follower {
+			t.Fatalf("phase %d -> %d walking frames=%v", phase, newPhase, frames)
+		}
+	}
+}
+
+func TestPartyWalkMultiMemberCollisionFailureRollsBack(t *testing.T) {
+	state := multiPartyWalkFixture()
+	before := detachPartyState(state)
+	source := &partyObstacleSource{failAt: 3}
+	step, err := runPartyWalk(t, &state, source, 20, [3]uint16{1, 1}, nil)
+	if err == nil || !strings.Contains(err.Error(), "movement 2") || !strings.Contains(err.Error(), "collision") || !reflect.DeepEqual(state, before) || step.PartyWalk != nil {
+		t.Fatalf("collision error was skipped or partially committed: %v %+v", err, state)
+	}
+}
+
+func TestPartyWalkHigherSpeedsShareGestureAndWorldUpdates(t *testing.T) {
+	for _, test := range []struct {
+		op           uint16
+		speed, ticks int
+	}{{0x70, 2, 3}, {0x7a, 4, 2}, {0x7b, 8, 1}} {
+		state := partyWalkFixture()
+		runner := &Runner{options: Options{MaxSteps: test.ticks + 1}}
+		step := TraceStep{}
+		handled, err := runner.evaluatePartyWalk(&state, &step, ins(test.op, 1, 1), nil)
+		if !handled || err != nil || len(step.PartyWalk.Steps) != test.ticks || step.PartyWalk.Speed != test.speed || state.WorldTicks != test.ticks || state.World.ViewportX != 32 || state.World.ViewportY != 16 {
+			t.Fatalf("opcode=%04x speed/ticks state=%+v step=%+v err=%v", test.op, state, step, err)
+		}
+	}
 }
 
 func detachPartyState(state State) State {

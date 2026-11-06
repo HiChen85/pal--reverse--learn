@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+
+	"github.com/HiChen85/pal--reverse--learn/internal/palcombat"
 )
 
 // WorldState is an explicit snapshot for state-only PAL instructions. PartyX and
@@ -11,49 +13,80 @@ import (
 // viewport and party offset, as PAL does, rather than trusting that cache.
 // This snapshot does not advance time, load scene resources, or run auto scripts.
 type WorldState struct {
-	PartyStepFrame   uint16                `json:"party_step_frame"`
-	AutoMessageMode  string                `json:"auto_message_mode,omitempty"`
-	InBattle         bool                  `json:"in_battle"`
-	SceneLoadPending bool                  `json:"scene_load_pending"`
-	FollowerSprites  []uint16              `json:"follower_sprites"`
-	PlayerResources  []SpriteResource      `json:"player_resources"`
-	FrameNum         uint32                `json:"frame_num"`
-	ChaseCycles      uint16                `json:"chase_cycles"`
-	ChaseRange       uint16                `json:"chase_range"`
-	Roles            map[uint16][75]uint16 `json:"roles"`
-	Objects          map[uint16][7]uint16  `json:"objects"`
-	EquipmentEffects [7][75][6]uint16      `json:"equipment_effects"`
-	PlayerStatus     [6][9]uint16          `json:"player_status"`
-	PlayerPoisons    [16][5]WorldPoison    `json:"player_poisons"`
-	PlayerStatusMode string                `json:"player_status_mode,omitempty"`
-	Scene            uint16                `json:"scene"`
-	SceneChanged     bool                  `json:"scene_changed"`
-	Layer            int16                 `json:"layer"`
-	PartyRoles       []uint16              `json:"party_roles"`
-	PartyX           int                   `json:"party_x"`
-	PartyY           int                   `json:"party_y"`
-	PartyOffsetX     int                   `json:"party_offset_x"`
-	PartyOffsetY     int                   `json:"party_offset_y"`
-	ViewportX        int                   `json:"viewport_x"`
-	ViewportY        int                   `json:"viewport_y"`
-	PartyPositions   []WorldPosition       `json:"party_positions"`
-	Trail            []WorldTrail          `json:"trail"`
-	Direction        uint16                `json:"direction"`
-	PartyFrames      []uint16              `json:"party_frames"`
-	Cash             uint32                `json:"cash"`
-	Battlefield      uint16                `json:"battlefield"`
-	Events           map[uint16]WorldEvent `json:"events"`
-	Scenes           map[uint16]WorldScene `json:"scenes"`
-	Inventory        map[uint16]int        `json:"inventory"`
-	InventorySlots   []InventorySlot       `json:"inventory_slots"`
-	PlayerSprites    map[uint16]uint16     `json:"player_sprites"`
+	RandomMode         string                `json:"random_mode,omitempty"`
+	AutoBattle         bool                  `json:"auto_battle"`
+	Battle             *palcombat.Snapshot   `json:"battle,omitempty"`
+	BattleMode         string                `json:"battle_mode,omitempty"`
+	BattleRandomState  uint64                `json:"battle_random_state"`
+	BattleResult       uint16                `json:"battle_result"`
+	BattleResultSet    bool                  `json:"battle_result_set"`
+	BattleHidingTime   int                   `json:"battle_hiding_time"`
+	BattleEnemyMoving  bool                  `json:"battle_enemy_moving"`
+	BattleBoss         bool                  `json:"battle_boss"`
+	BattleMovingPlayer uint16                `json:"battle_moving_player"`
+	BattleEnemyTarget  uint16                `json:"battle_enemy_target"`
+	BattleBlow         int16                 `json:"battle_blow"`
+	CollectValue       uint16                `json:"collect_value"`
+	SceneResources     *SceneResourceState   `json:"scene_resources,omitempty"`
+	Experience         [6][8]Experience      `json:"experience"`
+	LastUnequippedItem uint16                `json:"last_unequipped_item"`
+	MagicBaseDamage    map[uint16]uint16     `json:"magic_base_damage"`
+	Palette            uint16                `json:"palette"`
+	NightPalette       bool                  `json:"night_palette"`
+	ScreenWave         uint16                `json:"screen_wave"`
+	WaveProgression    int16                 `json:"wave_progression"`
+	NeedToFadeIn       bool                  `json:"need_to_fade_in"`
+	ScreenTint         string                `json:"screen_tint,omitempty"`
+	Music              uint16                `json:"music"`
+	MusicKnown         bool                  `json:"music_known"`
+	BattleMusic        uint16                `json:"battle_music"`
+	BattleMusicKnown   bool                  `json:"battle_music_known"`
+	PartyStepFrame     uint16                `json:"party_step_frame"`
+	AutoMessageMode    string                `json:"auto_message_mode,omitempty"`
+	InBattle           bool                  `json:"in_battle"`
+	SceneLoadPending   bool                  `json:"scene_load_pending"`
+	FollowerSprites    []uint16              `json:"follower_sprites"`
+	PlayerResources    []SpriteResource      `json:"player_resources"`
+	FrameNum           uint32                `json:"frame_num"`
+	ChaseCycles        uint16                `json:"chase_cycles"`
+	ChaseRange         uint16                `json:"chase_range"`
+	Roles              map[uint16][75]uint16 `json:"roles"`
+	Objects            map[uint16][7]uint16  `json:"objects"`
+	EquipmentEffects   [7][75][6]uint16      `json:"equipment_effects"`
+	PlayerStatus       [6][9]uint16          `json:"player_status"`
+	PlayerPoisons      [16][5]WorldPoison    `json:"player_poisons"`
+	PlayerStatusMode   string                `json:"player_status_mode,omitempty"`
+	Scene              uint16                `json:"scene"`
+	SceneChanged       bool                  `json:"scene_changed"`
+	Layer              int16                 `json:"layer"`
+	PartyRoles         []uint16              `json:"party_roles"`
+	PartyX             int                   `json:"party_x"`
+	PartyY             int                   `json:"party_y"`
+	PartyOffsetX       int                   `json:"party_offset_x"`
+	PartyOffsetY       int                   `json:"party_offset_y"`
+	ViewportX          int                   `json:"viewport_x"`
+	ViewportY          int                   `json:"viewport_y"`
+	PartyPositions     []WorldPosition       `json:"party_positions"`
+	Trail              []WorldTrail          `json:"trail"`
+	Direction          uint16                `json:"direction"`
+	PartyFrames        []uint16              `json:"party_frames"`
+	Cash               uint32                `json:"cash"`
+	Battlefield        uint16                `json:"battlefield"`
+	Events             map[uint16]WorldEvent `json:"events"`
+	Scenes             map[uint16]WorldScene `json:"scenes"`
+	Inventory          map[uint16]int        `json:"inventory"`
+	InventorySlots     []InventorySlot       `json:"inventory_slots"`
+	PlayerSprites      map[uint16]uint16     `json:"player_sprites"`
 }
 
 type WorldPoison struct {
 	ID     uint16 `json:"id"`
 	Script uint16 `json:"script"`
 }
+
+type Experience struct{ Exp, Reserved, Level, Count uint16 }
 type WorldEvent struct {
+	Sprite           uint16 `json:"sprite"`
 	SpriteFrames     uint16 `json:"sprite_frames"`
 	SpriteFramesAuto uint16 `json:"sprite_frames_auto"`
 	AutoIdleFrame    uint16 `json:"auto_idle_frame"`
@@ -94,6 +127,15 @@ func CloneWorld(world *WorldState) *WorldState {
 		return nil
 	}
 	cloned := *world
+	if world.Battle != nil {
+		battle := palcombat.CloneSnapshot(*world.Battle)
+		cloned.Battle = &battle
+	}
+	if world.SceneResources != nil {
+		resource := *world.SceneResources
+		resource.EventSprites = maps.Clone(resource.EventSprites)
+		cloned.SceneResources = &resource
+	}
 	cloned.PartyRoles = slices.Clone(world.PartyRoles)
 	cloned.FollowerSprites = slices.Clone(world.FollowerSprites)
 	cloned.PlayerResources = slices.Clone(world.PlayerResources)
@@ -107,6 +149,7 @@ func CloneWorld(world *WorldState) *WorldState {
 	cloned.PlayerSprites = maps.Clone(world.PlayerSprites)
 	cloned.Roles = maps.Clone(world.Roles)
 	cloned.Objects = maps.Clone(world.Objects)
+	cloned.MagicBaseDamage = maps.Clone(world.MagicBaseDamage)
 	return &cloned
 }
 

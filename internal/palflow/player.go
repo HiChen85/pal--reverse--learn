@@ -23,13 +23,41 @@ func playerOpcodeName(op uint16) string {
 	case 0x17:
 		return "set equipment extra attribute"
 	case 0x18:
-		return "reapply already-equipped item effects only"
+		return "equip item and exchange ordered inventory entries"
+	case 0x19:
+		return "change raw player attribute by signed amount"
 	case 0x1a:
 		return "set raw player/equipment attribute"
+	case 0x1b:
+		return "change living player HP by signed amount"
+	case 0x1c:
+		return "change living player MP by signed amount"
+	case 0x1d:
+		return "change living player HP and MP by signed amount"
+	case 0x20:
+		return "remove inventory then party equipment, or jump if insufficient"
+	case 0x22:
+		return "revive dead player and cure removable status and low-level poison"
+	case 0x23:
+		return "unequip specified role and return items to inventory"
 	case 0x2d:
 		return "set explicitly modeled player status"
+	case 0x2f:
+		return "remove player status unless supplied by equipment"
+	case 0x30:
+		return "set temporary player attribute by signed base percentage"
+	case 0x55:
+		return "add magic to first empty player magic slot"
+	case 0x56:
+		return "remove first matching player magic without compacting"
+	case 0x57:
+		return "set magic base damage from player MP and consume all MP"
+	case 0x74:
+		return "jump if any party member has less than maximum HP"
 	case 0x75:
 		return "set party and rebuild bounded linear equipment effects"
+	case 0x90:
+		return "set normalized object raw script field"
 	}
 	return ""
 }
@@ -45,20 +73,27 @@ func (r *Runner) evaluatePlayer(state *State, step *TraceStep, inst Instruction)
 		return true, fmt.Errorf("player instruction requires an explicit world snapshot")
 	}
 	frame := state.Frames[len(state.Frames)-1]
-	nextPC, err := fallthroughPC(frame.PC)
-	if err != nil {
-		return true, err
-	}
+	var err error
+	var jump *uint16
 	working := *state
 	working.World = CloneWorld(state.World)
 	var evidence []PlayerSubstep
 	if inst.Opcode == 0x75 {
 		evidence, err = r.setPartyAndEquip(&working, inst)
 	} else {
-		err = applyPlayer(&working, frame.EventID, inst)
+		jump, err = applyPlayerTransition(&working, frame.EventID, inst)
 	}
 	if err != nil {
 		return true, err
+	}
+	var nextPC uint16
+	if jump != nil {
+		nextPC = *jump
+	} else {
+		nextPC, err = fallthroughPC(frame.PC)
+		if err != nil {
+			return true, err
+		}
 	}
 	state.World = working.World
 	state.CurEquipPart = working.CurEquipPart
@@ -120,13 +155,30 @@ func applyPlayer(state *State, role uint16, inst Instruction) error {
 		if err != nil {
 			return err
 		}
-		if raw[11+slot] != a[1] {
-			return fmt.Errorf("equipment swap is not modeled: role %d slot %d currently has %d, requested %d", role, slot, raw[11+slot], a[1])
-		}
 		if err := removeEquipmentEffects(world, role, slot); err != nil {
 			return err
 		}
 		state.CurEquipPart = slot
+		if old := raw[11+slot]; old != a[1] {
+			slots, _, err := checkedInventory(world, true)
+			if err != nil {
+				return fmt.Errorf("equipment swap: %w", err)
+			}
+			index, found := inventoryIndex(slots, a[1])
+			_, oldFound := inventoryIndex(slots, old)
+			if found && index < inventoryCapacity && slots[index].Amount == 1 && old != 0 && !oldFound {
+				slots[index].Item = old
+			} else {
+				changeInventorySlots(slots, a[1], -1)
+				if old != 0 {
+					changeInventorySlots(slots, old, 1)
+				}
+			}
+			raw[11+slot] = a[1]
+			world.Roles[role] = raw
+			world.InventorySlots, world.Inventory = slots, inventoryCounts(slots)
+			world.LastUnequippedItem = old
+		}
 	case 0x1a:
 		if a[2] != 0 {
 			role = a[2] - 1
@@ -193,7 +245,7 @@ func applyPlayer(state *State, role uint16, inst Instruction) error {
 			}
 		}
 	default:
-		return fmt.Errorf("player opcode %04x is not supported by linear equipment interpreter", inst.Opcode)
+		return applyMorePlayer(state, role, inst)
 	}
 	return nil
 }
@@ -297,7 +349,7 @@ func (r *Runner) rebuildEquipment(state *State, reserveOuter int) ([]PlayerSubst
 			return nil, err
 		}
 	}
-	remaining := r.options.MaxSteps - state.ExecutedSteps - state.PlayerSubsteps - state.WorldTicks - state.AutoSubsteps - reserveOuter
+	remaining := r.options.MaxSteps - state.ExecutedSteps - state.PlayerSubsteps - state.WorldTicks - state.AutoSubsteps - state.CombatWork - reserveOuter
 	if remaining < 0 {
 		return nil, fmt.Errorf("no shared instruction budget remains for equipment rebuild")
 	}
@@ -335,7 +387,8 @@ func (r *Runner) rebuildEquipment(state *State, reserveOuter int) ([]PlayerSubst
 						return nil, fmt.Errorf("OnEquip role %d item %d PC %04x: %w", role, item, pc, err)
 					}
 					child.Effect = "stop and replace OnEquip entry with following instruction"
-				case 0x17, 0x18, 0x1a, 0x2d:
+				case 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d,
+					0x22, 0x23, 0x2d, 0x2f, 0x30, 0x55, 0x56, 0x57, 0x90:
 					if err = applyPlayer(state, role, instruction); err != nil {
 						return nil, fmt.Errorf("OnEquip role %d item %d PC %04x opcode %04x operands %04x: %w", role, item, pc, instruction.Opcode, instruction.Operands, err)
 					}

@@ -152,7 +152,7 @@ func TestOriginalReadAndInputErrorsPreserveEvidence(t *testing.T) {
 	if err := o.run("on_enter"); err == nil {
 		t.Fatal("changed source options allowed stale run")
 	}
-	for _, input := range []string{`[{"kind":"confirm","value":2}]`, `[{"kind":"random","value":0}]`, `[{"kind":"battle","value":3}]`, `[{"kind":"skip","value":1}]`, `[] []`, `[{"kind":"confirm","value":null}]`, `[{"kind":"confirm"}]`, `[{"kind":"confirm","value":1,"value":0}]`, `[{"kind":"confirm","value":1,"secret":true}]`} {
+	for _, input := range []string{`[{"kind":"confirm","value":2}]`, `[{"kind":"random","value":-1}]`, `[{"kind":"battle","value":3}]`, `[{"kind":"skip","value":1}]`, `[] []`, `[{"kind":"confirm","value":null}]`, `[{"kind":"confirm"}]`, `[{"kind":"confirm","value":1,"value":0}]`, `[{"kind":"confirm","value":1,"secret":true}]`} {
 		if _, err := decodeOriginalInputs(input); err == nil {
 			t.Errorf("accepted %s", input)
 		}
@@ -235,6 +235,12 @@ func originalRuntimeFixture(t *testing.T) string {
 	chunks[1] = make([]byte, 70)
 	chunks[2] = make([]byte, 10)
 	chunks[3] = make([]byte, 75*6*2)
+	chunks[4] = make([]byte, 32)
+	chunks[5] = make([]byte, 12)
+	chunks[6] = make([]byte, 20)
+	chunks[11] = make([]byte, 40)
+	chunks[13] = make([]byte, 100)
+	chunks[14] = make([]byte, 200)
 	if err := os.WriteFile(filepath.Join(dir, "DATA.MKF"), originalMKF(chunks...), 0600); err != nil {
 		t.Fatal(err)
 	}

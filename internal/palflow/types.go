@@ -1,6 +1,6 @@
-// Package palflow inventories and traces a deliberately partial PAL trigger
-// script model. It implements an explicit subset of state changes; it does not implement time updates, auto scripts, rendering,
-// battle simulation, or main-story/side-quest verification.
+// Package palflow inventories and executes a bounded PAL script model with
+// world updates, auto scripts, collision sources and a numeric-combat bridge.
+// Unsupported behavior stops execution; audiovisual requests are recorded.
 package palflow
 
 import "fmt"
@@ -34,6 +34,7 @@ const (
 	InputRandom  = "random"
 	InputConfirm = "confirm"
 	InputBattle  = "battle"
+	InputKey     = "key"
 	BattleWin    = 0
 	BattleLost   = 1
 	BattleFled   = 2
@@ -44,9 +45,10 @@ type Input struct {
 	Value int    `json:"value"`
 }
 type InputUse struct {
-	Index   int    `json:"index"`
-	Input   Input  `json:"input"`
-	Meaning string `json:"meaning"`
+	Generated bool   `json:"generated,omitempty"`
+	Index     int    `json:"index"`
+	Input     Input  `json:"input"`
+	Meaning   string `json:"meaning"`
 }
 type Frame struct {
 	PC        uint16 `json:"pc"`
@@ -55,23 +57,27 @@ type Frame struct {
 	EventID   uint16 `json:"event_id"`
 }
 type State struct {
-	AutoSubsteps     int               `json:"auto_substeps"`
-	WorldTicks       int               `json:"world_ticks"`
-	CurEquipPart     int               `json:"cur_equip_part"`
-	ScriptSuccess    bool              `json:"script_success"`
-	PlayerSubsteps   int               `json:"player_substeps"`
-	World            *WorldState       `json:"world,omitempty"`
-	Music            uint16            `json:"music"`
-	MusicKnown       bool              `json:"music_known"`
-	BattleMusic      uint16            `json:"battle_music"`
-	BattleMusicKnown bool              `json:"battle_music_known"`
-	Frames           []Frame           `json:"frames"`
-	IdleFrames       map[uint16]uint16 `json:"idle_frames"`
-	LastEventID      uint16            `json:"last_event_id"`
-	Finished         bool              `json:"finished"`
-	ReturnedEntry    uint16            `json:"returned_entry"`
-	InputIndex       int               `json:"input_index"`
-	ExecutedSteps    int               `json:"executed_steps"`
+	LastInlineReturn uint16             `json:"last_inline_return"`
+	CombatWork       int                `json:"combat_work"`
+	Random           ScriptRandomSource `json:"-"`
+	TextBytes        int                `json:"text_bytes"`
+	AutoSubsteps     int                `json:"auto_substeps"`
+	WorldTicks       int                `json:"world_ticks"`
+	CurEquipPart     int                `json:"cur_equip_part"`
+	ScriptSuccess    bool               `json:"script_success"`
+	PlayerSubsteps   int                `json:"player_substeps"`
+	World            *WorldState        `json:"world,omitempty"`
+	Music            uint16             `json:"music"`
+	MusicKnown       bool               `json:"music_known"`
+	BattleMusic      uint16             `json:"battle_music"`
+	BattleMusicKnown bool               `json:"battle_music_known"`
+	Frames           []Frame            `json:"frames"`
+	IdleFrames       map[uint16]uint16  `json:"idle_frames"`
+	LastEventID      uint16             `json:"last_event_id"`
+	Finished         bool               `json:"finished"`
+	ReturnedEntry    uint16             `json:"returned_entry"`
+	InputIndex       int                `json:"input_index"`
+	ExecutedSteps    int                `json:"executed_steps"`
 }
 type DisplayedMessage struct {
 	ID   uint16 `json:"id"`
@@ -93,33 +99,42 @@ type AudioRecord struct {
 	Executed          bool    `json:"executed"`
 }
 type ScreenRecord struct {
+	DelayMilliseconds          uint32 `json:"delay_milliseconds,omitempty"`
+	Delay                      uint16 `json:"delay,omitempty"`
+	Palette                    uint16 `json:"palette,omitempty"`
+	Night                      bool   `json:"night"`
 	Kind                       string `json:"kind"`
 	ClearDialogRequested       bool   `json:"clear_dialog_requested"`
 	OverworldDelayMilliseconds uint32 `json:"overworld_delay_milliseconds,omitempty"`
 	Rendered                   bool   `json:"rendered"`
 }
 type TraceStep struct {
-	PartyWalk      *PartyWalkRecord  `json:"party_walk,omitempty"`
-	AutoSteps      []AutoStep        `json:"auto_steps,omitempty"`
-	Resources      []SpriteResource  `json:"resources,omitempty"`
-	Ticks          uint16            `json:"ticks,omitempty"`
-	PlayerSubsteps []PlayerSubstep   `json:"player_substeps,omitempty"`
-	Audio          *AudioRecord      `json:"audio,omitempty"`
-	Screen         *ScreenRecord     `json:"screen,omitempty"`
-	Sequence       int               `json:"sequence"`
-	PC             uint16            `json:"pc"`
-	Opcode         uint16            `json:"opcode"`
-	Operands       [3]uint16         `json:"operands"`
-	EventID        uint16            `json:"event_id"`
-	Depth          int               `json:"depth"`
-	Effect         string            `json:"effect"`
-	NextPC         uint16            `json:"next_pc"`
-	Input          *InputUse         `json:"input,omitempty"`
-	Message        *DisplayedMessage `json:"message,omitempty"`
-	Dialog         *DialogRecord     `json:"dialog,omitempty"`
-	ReturnedEntry  *uint16           `json:"returned_entry,omitempty"`
+	WorldUpdates   []WorldUpdateRecord `json:"world_updates,omitempty"`
+	Combat         *CombatExecution    `json:"combat,omitempty"`
+	RandomInputs   []InputUse          `json:"random_inputs,omitempty"`
+	Children       []TraceStep         `json:"children,omitempty"`
+	PartyWalk      *PartyWalkRecord    `json:"party_walk,omitempty"`
+	AutoSteps      []AutoStep          `json:"auto_steps,omitempty"`
+	Resources      []SpriteResource    `json:"resources,omitempty"`
+	Ticks          uint16              `json:"ticks,omitempty"`
+	PlayerSubsteps []PlayerSubstep     `json:"player_substeps,omitempty"`
+	Audio          *AudioRecord        `json:"audio,omitempty"`
+	Screen         *ScreenRecord       `json:"screen,omitempty"`
+	Sequence       int                 `json:"sequence"`
+	PC             uint16              `json:"pc"`
+	Opcode         uint16              `json:"opcode"`
+	Operands       [3]uint16           `json:"operands"`
+	EventID        uint16              `json:"event_id"`
+	Depth          int                 `json:"depth"`
+	Effect         string              `json:"effect"`
+	NextPC         uint16              `json:"next_pc"`
+	Input          *InputUse           `json:"input,omitempty"`
+	Message        *DisplayedMessage   `json:"message,omitempty"`
+	Dialog         *DialogRecord       `json:"dialog,omitempty"`
+	ReturnedEntry  *uint16             `json:"returned_entry,omitempty"`
 }
 type Blocker struct {
+	Cause       *Blocker     `json:"cause,omitempty"`
 	Kind        string       `json:"kind"`
 	Reason      string       `json:"reason"`
 	PC          uint16       `json:"pc"`

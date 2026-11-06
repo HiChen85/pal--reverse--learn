@@ -18,7 +18,7 @@ func opcodeName(op uint16) string {
 	case 4:
 		return "call_trigger"
 	case 5:
-		return "redraw_record_operand2_zero_only"
+		return "redraw_record_and_optional_standing_gestures"
 	case 0x43:
 		return "music_config_record_no_playback"
 	case 0x45:
@@ -28,9 +28,9 @@ func opcodeName(op uint16) string {
 	case 0x8e:
 		return "restore_screen_record_only"
 	case 6:
-		return "random_branch_explicit_input"
+		return "random_branch_with_declared_input_policy"
 	case 7:
-		return "battle_external_outcome_only"
+		return "numeric_battle_or_explicit_supplied_outcome"
 	case 8:
 		return "replace_next_entry"
 	case 0xa:
@@ -46,6 +46,24 @@ func opcodeName(op uint16) string {
 	case 0xffff:
 		return "message_table_reference"
 	default:
+		if name := poisonOpcodeName(op); name != "" {
+			return name
+		}
+		if name := battleOpcodeName(op); name != "" {
+			return name
+		}
+		if name := worldExtraOpcodeName(op); name != "" {
+			return name
+		}
+		if name := movementOpcodeName(op); name != "" {
+			return name
+		}
+		if name := conditionsOpcodeName(op); name != "" {
+			return name
+		}
+		if name := presentationOpcodeName(op); name != "" {
+			return name
+		}
 		if name := partyWalkOpcodeName(op); name != "" {
 			return name
 		}
@@ -67,13 +85,10 @@ func opcodeName(op uint16) string {
 func supported(op uint16) bool { return opcodeName(op) != "unsupported" }
 func operandRestriction(inst Instruction) string {
 	if inst.Opcode == 0x70 {
-		return "party walk requires a complete single-member world snapshot and bounded auto scheduling; table-only audit cannot expand it"
+		return "party walk requires a complete party world snapshot and bounded auto scheduling; table-only audit cannot expand it"
 	}
 	if inst.Opcode == 9 {
 		return "wait requires explicit current-scene world state and bounded auto scheduling; table-only audit cannot safely expand it"
-	}
-	if inst.Opcode == 5 && inst.Operands[2] != 0 {
-		return "redraw operand 2 requests PAL_UpdatePartyGestures; party/world gesture effects are not modeled"
 	}
 	return ""
 }
@@ -90,7 +105,7 @@ func counts(entries []Instruction) []OpcodeCount {
 	for op, n := range byOp {
 		constraints := []string(nil)
 		if op == 5 {
-			constraints = []string{"Operand 2 must be zero; party gesture updates are not modeled."}
+			constraints = []string{"Nonzero operand 2 requires complete party standing-gesture state."}
 		}
 		out = append(out, OpcodeCount{ModeledCount: modeled[op], OperandConstraints: constraints, Opcode: op, Hex: fmt.Sprintf("0x%04x", op), Name: opcodeName(op), Count: n, Supported: supported(op)})
 	}
@@ -125,6 +140,8 @@ func AuditMany(entries []Instruction, roots []uint16) AuditReport {
 		"Call-return and subsequent-trigger resume edges are possible edges, not proof that a callee returns or an event is triggered again.",
 		"This audit does not resolve equipment rebuild implicit calls or verify scene transitions, automatic scripts, world effects, dialogue rendering, combat, main story or side quests.",
 		"Message references are not resolved by this table-only audit; a missing message blocks a runtime trace when reached.",
+		"Scene teleport calls require a runtime scene table; traversal stops there rather than guessing their callee or return behavior.",
+		"Random skips use the reference integer-division range. A skip with more than 4096 possible targets, or a graph exceeding 65536 edges, stops with an explicit expansion blocker.",
 	}}
 	rootSet := map[uint16]bool{}
 	queue := make([]uint16, 0, len(roots))
@@ -167,7 +184,15 @@ func AuditMany(entries []Instruction, roots []uint16) AuditReport {
 			result.Blockers = append(result.Blockers, StaticBlocker{PC: pc, Opcode: inst.Opcode, Reason: reason})
 			continue
 		}
+		edgeLimitReached := false
 		add := func(to uint16, kind string) {
+			if len(result.Edges) >= 1<<16 {
+				if !edgeLimitReached {
+					result.Blockers = append(result.Blockers, StaticBlocker{PC: pc, Opcode: inst.Opcode, Reason: "static edge expansion limit of 65536 reached; outgoing behavior is not fully expanded"})
+					edgeLimitReached = true
+				}
+				return
+			}
 			result.Edges = append(result.Edges, Edge{From: pc, To: to, Kind: kind})
 			if to != 0 && !visited[to] {
 				queue = append(queue, to)
@@ -217,6 +242,49 @@ func AuditMany(entries []Instruction, roots []uint16) AuditReport {
 		case 0x58:
 			add(a[2], "possible_inventory_insufficient")
 			next("possible_inventory_sufficient")
+		case 0x20:
+			if a[2] != 0 {
+				add(a[2], "possible_inventory_and_equipment_insufficient")
+			}
+			next("possible_item_removal")
+		case 0x38:
+			result.Blockers = append(result.Blockers, StaticBlocker{PC: pc, Opcode: inst.Opcode, Reason: "scene teleport callee depends on runtime scene state; static traversal stops without assuming a callee or return"})
+		case 0x5d:
+			add(a[1], "possible_poison_kind_absent")
+			next("possible_poison_kind_present")
+		case 0x61:
+			add(a[0], "possible_ordinary_poison_absent")
+			next("possible_ordinary_poison_present")
+		case 0x74:
+			add(a[0], "possible_party_member_below_maximum_hp")
+			next("possible_party_hp_full")
+		case 0x79:
+			add(a[1], "possible_party_name_present")
+			next("possible_party_name_absent")
+		case 0x81, 0x83, 0x84:
+			add(a[2], "possible_spatial_condition_failed")
+			next("possible_spatial_condition_succeeded")
+		case 0x86:
+			add(a[2], "possible_equipped_item_count_below_threshold")
+			next("possible_equipped_item_count_sufficient")
+		case 0x94:
+			add(a[2], "possible_event_state_equal")
+			next("possible_event_state_different")
+		case 0x95:
+			add(a[1], "possible_current_scene_equal")
+			next("possible_current_scene_different")
+		case 0xa2:
+			maximum := referenceRandomSkipMaximum(a[0])
+			if maximum+1 > 4096 || maximum+1 > (1<<16)-len(result.Edges) {
+				result.Blockers = append(result.Blockers, StaticBlocker{PC: pc, Opcode: inst.Opcode, Reason: fmt.Sprintf("random skip has %d possible reference results; bounded static edge expansion stops here", maximum+1)})
+				break
+			}
+			if int(pc)+maximum >= 0xffff {
+				result.Blockers = append(result.Blockers, StaticBlocker{PC: pc, Opcode: inst.Opcode, Reason: "some reference random skip results overflow the modeled 16-bit program counter"})
+			}
+			for skip := 0; skip <= maximum && int(pc)+skip < 0xffff; skip++ {
+				add(pc+uint16(skip)+1, "possible_reference_random_skip")
+			}
 		case 0xa:
 			add(a[0], "confirm_no")
 			next("confirm_yes")

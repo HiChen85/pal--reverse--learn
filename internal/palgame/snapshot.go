@@ -1,6 +1,6 @@
 // Package palgame adapts imported PAL tables into explicitly declared headless
-// snapshots. It does not establish that a snapshot is reachable in the original
-// game, advance frames, or certify the identity of a Windows release.
+// snapshots and stateful spatial controls. Explicit checkpoints do not establish
+// reachability or certify the identity of a Windows release.
 package palgame
 
 import (
@@ -60,7 +60,7 @@ func InitialState(g *paldata.Game, r *paldata.RuntimeTables, scene uint16) (Init
 	}
 	w := &palflow.WorldState{Scene: scene, ChaseRange: 1, PartyRoles: []uint16{0}, PartyFrames: make([]uint16, 5), PartyOffsetX: 160, PartyOffsetY: 112, PartyX: 160, PartyY: 112, PartyPositions: make([]palflow.WorldPosition, 5), Trail: make([]palflow.WorldTrail, 5), Events: map[uint16]palflow.WorldEvent{}, Scenes: map[uint16]palflow.WorldScene{}, Inventory: map[uint16]int{}, InventorySlots: make([]palflow.InventorySlot, 256), PlayerSprites: map[uint16]uint16{}}
 	for i, e := range g.Events {
-		w.Events[uint16(i+1)] = palflow.WorldEvent{Trigger: e.Trigger, AutoScript: e.AutoScript, State: e.State, VanishTime: e.VanishTime, Layer: e.Layer, X: e.X, Y: e.Y, Direction: e.Direction, Frame: e.CurrentFrame, TriggerMode: e.TriggerMode, SpriteFrames: e.SpriteFrames, SpriteFramesAuto: e.SpriteFramesAuto, AutoIdleFrame: e.AutoIdleFrame}
+		w.Events[uint16(i+1)] = palflow.WorldEvent{Sprite: e.Sprite, Trigger: e.Trigger, AutoScript: e.AutoScript, State: e.State, VanishTime: e.VanishTime, Layer: e.Layer, X: e.X, Y: e.Y, Direction: e.Direction, Frame: e.CurrentFrame, TriggerMode: e.TriggerMode, SpriteFrames: e.SpriteFrames, SpriteFramesAuto: e.SpriteFramesAuto, AutoIdleFrame: e.AutoIdleFrame}
 	}
 	for i, s := range g.Scenes {
 		w.Scenes[uint16(i+1)] = palflow.WorldScene{Map: s.Map, OnEnter: s.OnEnter, OnTeleport: s.OnTeleport, EventStart: s.EventStart}
@@ -79,6 +79,17 @@ func InitialState(g *paldata.Game, r *paldata.RuntimeTables, scene uint16) (Init
 	}
 	for _, role := range r.Roles {
 		w.Roles[role.ID] = role.Raw
+	}
+	w.MagicBaseDamage = map[uint16]uint16{}
+	for _, m := range r.Magics {
+		w.MagicBaseDamage[m.ID] = m.BaseDamage
+	}
+	exp := r.InitialExperience()
+	tracks := [][6]paldata.Experience{exp.Primary, exp.Health, exp.Magic, exp.Attack, exp.MagicPower, exp.Defense, exp.Dexterity, exp.Flee}
+	for kind, track := range tracks {
+		for role, x := range track {
+			w.Experience[role][kind] = palflow.Experience{Exp: x.Exp, Reserved: x.Reserved, Level: x.Level, Count: x.Count}
+		}
 	}
 	runner, err := palflow.New(Source{Game: g}, palflow.Options{})
 	if err != nil {
@@ -103,10 +114,17 @@ func InitialIdleFrames(g *paldata.Game) map[uint16]uint16 {
 // Source reads direct indexes. RedactText keeps evidence local without copying
 // the game's dialogue into reports intended for sharing.
 type Source struct {
-	Game       *paldata.Game
-	RedactText bool
-	Assets     *palasset.SpriteCatalog
+	battleContext *palflow.CombatContext
+	Runtime       *paldata.RuntimeTables
+	Random        palflow.ScriptRandomSource
+	Game          *paldata.Game
+	RedactText    bool
+	Assets        *palasset.SpriteCatalog
+	Maps          *palasset.MapCatalog
 }
+
+func (s Source) RuntimeTables() *paldata.RuntimeTables    { return s.Runtime }
+func (s Source) ScriptRandom() palflow.ScriptRandomSource { return s.Random }
 
 func (s Source) SpriteResource(id uint16) (palflow.SpriteResource, error) {
 	if s.Assets == nil {

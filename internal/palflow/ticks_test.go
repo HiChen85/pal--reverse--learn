@@ -102,7 +102,6 @@ func TestTicksErrorsPreserveWholeInstruction(t *testing.T) {
 		budget int
 		want   string
 	}{
-		{"trigger requested", Instruction{Opcode: 9, Operands: [3]uint16{1, 1, 0}}, nil, 100, "trigger updates"},
 		{"gesture requested", Instruction{Opcode: 9, Operands: [3]uint16{1, 0, 1}}, nil, 100, "party gestures"},
 		{"missing world", Instruction{Opcode: 9}, func(s *State) { s.World = nil }, 100, "explicit world"},
 		{"missing frame", Instruction{Opcode: 9}, func(s *State) { s.Frames = nil }, 100, "current script frame"},

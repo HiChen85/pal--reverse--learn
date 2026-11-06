@@ -12,6 +12,23 @@ type InventorySlot struct {
 
 const inventoryCapacity = 256
 
+// ChangeInventory applies the original ordered-slot add/remove operation on a
+// detached world. Menu actions use the same retained-zero and partial-removal
+// behavior as script instructions. The result is the source success/shortage.
+func ChangeInventory(world *WorldState, item uint16, quantity int) (*WorldState, int, error) {
+	if world == nil {
+		return nil, 0, fmt.Errorf("inventory change requires a world")
+	}
+	w := CloneWorld(world)
+	slots, _, err := checkedInventory(w, true)
+	if err != nil {
+		return nil, 0, err
+	}
+	result := changeInventorySlots(slots, item, quantity)
+	w.InventorySlots, w.Inventory = slots, inventoryCounts(slots)
+	return w, result, nil
+}
+
 func inventoryOpcodeName(op uint16) string {
 	switch op {
 	case 0x001e:
@@ -20,15 +37,16 @@ func inventoryOpcodeName(op uint16) string {
 		return "add or remove inventory item by signed amount"
 	case 0x0058:
 		return "jump if inventory amount is below signed threshold"
+	case 0x008f:
+		return "halve cash with unsigned integer division"
 	}
 	return ""
 }
 
 // Semantics are checked against SDLPAL d4bf69b64d335cd680555af9df90e7ec4f3006a3,
 // script.c (0x001e/0x001f/0x0058) and global.c inventory lookup/add functions.
-// evaluateInventory models only the state transitions of the three listed
-// instructions. It does not remove equipped items (0x0020), run battle item
-// reservations or reproduce inventory-menu cursor effects.
+// Equipment-aware removal (0x0020) is handled by evaluatePlayer. Battle item
+// reservations and inventory-menu cursor effects are not reproduced.
 func evaluateInventory(state *State, step *TraceStep, inst Instruction) (bool, error) {
 	name := inventoryOpcodeName(inst.Opcode)
 	if name == "" {
@@ -126,11 +144,64 @@ func evaluateInventory(state *State, step *TraceStep, inst Instruction) (bool, e
 			}
 			effect += fmt.Sprintf("; item %d amount %d >= %d; continue", a[0], amount, threshold)
 		}
+	case 0x008f:
+		nextPC, err = fallthroughPC(frame.PC)
+		if err != nil {
+			return true, err
+		}
+		world.Cash /= 2
 	}
 	frames := append([]Frame(nil), state.Frames...)
 	frames[frameIndex].PC = nextPC
 	state.World, state.Frames, step.Effect = world, frames, effect
 	return true, nil
+}
+
+// inventoryIndex also permits item zero, because the equipment-exchange fast
+// path calls the raw lookup before PAL_AddItemToInventory rejects item zero.
+func inventoryIndex(slots []InventorySlot, item uint16) (int, bool) {
+	for index, slot := range slots {
+		if slot.Item == item {
+			return index, true
+		}
+		if slot.Item == 0 {
+			return index, false
+		}
+	}
+	return len(slots), false
+}
+
+// changeInventorySlots returns 1 on success, 0 if unchanged, or the negative
+// shortage after a partial removal. Zero-quantity entries and InUse remain.
+// Callers supply a validated, detached, full-capacity ordered inventory.
+func changeInventorySlots(slots []InventorySlot, item uint16, quantity int) int {
+	if item == 0 {
+		return 0
+	}
+	if quantity == 0 {
+		quantity = 1
+	}
+	index, found := inventoryIndex(slots, item)
+	if quantity > 0 {
+		if index >= inventoryCapacity {
+			return 0
+		}
+		amount := quantity
+		if found {
+			amount += int(slots[index].Amount)
+		}
+		slots[index].Item, slots[index].Amount = item, uint16(min(amount, 99))
+		return 1
+	}
+	if !found {
+		return 0
+	}
+	available := int(slots[index].Amount)
+	slots[index].Amount = uint16(max(0, available+quantity))
+	if available < -quantity {
+		return available + quantity
+	}
+	return 1
 }
 
 // checkedInventory requires ordered slots for mutation. A nonnil empty slice is

@@ -26,7 +26,7 @@ func autoFixture(source autoSource) (State, *Runner) {
 	state.World.Scenes[2] = WorldScene{EventStart: 2}
 	state.World.Events[2] = WorldEvent{State: 1, AutoScript: 1, SpriteFrames: 3}
 	state.World.AutoMessageMode = "dos"
-	return state, &Runner{source: source, options: Options{MaxSteps: 100000}}
+	return state, &Runner{source: source, options: Options{MaxSteps: 100000, MaxCallDepth: 32, MaxTextBytes: DefaultMaxTextBytes}}
 }
 
 func waitAuto(t *testing.T, r *Runner, state *State, ticks uint16, inputs ...Input) TraceStep {
@@ -220,9 +220,9 @@ func TestAutoFailureRollsBackWholeWaitIncludingRandomAndEarlierTicks(t *testing.
 	}{
 		{"random missing", autoSource{1: ins(6, 50, 3)}, nil, "explicit random input"},
 		{"random wrong kind", autoSource{1: ins(6, 50, 3)}, []Input{{Kind: InputConfirm, Value: 1}}, "expected random"},
-		{"random invalid value", autoSource{1: ins(6, 50, 3)}, []Input{{Kind: InputRandom, Value: 101}}, "invalid random value"},
+		{"random invalid value", autoSource{1: ins(6, 50, 3)}, []Input{{Kind: InputRandom, Value: 102}}, "invalid random value"},
 		{"source missing", autoSource{}, nil, "instruction 0001 absent"},
-		{"trigger subroutine", autoSource{1: ins(4, 2)}, nil, "trigger subroutine scheduling"},
+		{"missing trigger subroutine source", autoSource{1: ins(4, 2)}, nil, "instruction 0002 absent"},
 		{"missing target", autoSource{1: ins(0x49, 99, 1)}, nil, "target event 99"},
 		{"special target", autoSource{1: ins(0x49, 0x9002, 1)}, nil, "special event addressing"},
 	} {

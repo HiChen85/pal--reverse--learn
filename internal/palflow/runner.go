@@ -53,12 +53,19 @@ func (r *Runner) Trace(request Request) (Report, error) {
 		eventID = request.LastEventID
 	}
 	state := State{CurEquipPart: -1, ScriptSuccess: true, World: CloneWorld(request.World), Frames: []Frame{{PC: request.Entry, Entry: request.Entry, NextEntry: request.Entry, EventID: eventID}}, IdleFrames: maps.Clone(request.IdleFrames), LastEventID: eventID}
+	if state.World != nil {
+		state.Music, state.MusicKnown = state.World.Music, state.World.MusicKnown
+		state.BattleMusic, state.BattleMusicKnown = state.World.BattleMusic, state.World.BattleMusicKnown
+	}
+	if provider, ok := r.source.(ScriptRandomProvider); ok {
+		state.Random = provider.ScriptRandom()
+	}
 	if state.IdleFrames == nil {
 		state.IdleFrames = map[uint16]uint16{}
 	}
 	report := Report{Status: "blocked", Coverage: "partial trigger-script model; no main-story or side-quest verification", Limitations: []string{
 		"Only the modeled trigger opcode subset is executed; unsupported instructions stop the trace.",
-		"Only the explicit world, inventory, equipment, resource and restricted auto-script subset is modeled. Trigger-enabled updates, general collision, rendering, audio playback and combat are not executed. Dialog/screen/audio requests are recorded; music configuration scalars are tracked per invocation.",
+		"World, inventory, equipment, auto scheduling and collision execute only where modeled with explicit resources. Numeric combat requires a combat source and policy; otherwise battle input is an explicitly marked supplied outcome. Dialog/screen/audio requests are recorded without audiovisual playback. This trace alone does not verify a complete route or original-runtime parity.",
 		"Message lookup uses direct original-table indexes; custom message-file span remapping is not modeled.",
 		"Event contexts and initial idle counters are caller-supplied; event existence and spatial trigger reachability are not verified.",
 	}}
@@ -80,7 +87,7 @@ func (r *Runner) Trace(request Request) (Report, error) {
 			finalize(&report, state, request.Inputs)
 			return report, blocker
 		}
-		if state.ExecutedSteps+state.PlayerSubsteps+state.WorldTicks+state.AutoSubsteps >= r.options.MaxSteps {
+		if state.ExecutedSteps+state.PlayerSubsteps+state.WorldTicks+state.AutoSubsteps+state.CombatWork >= r.options.MaxSteps {
 			return fail("step_limit", "maximum modeled instruction count reached", nil)
 		}
 		inst, err := r.source.Instruction(frame.PC)
@@ -90,33 +97,30 @@ func (r *Runner) Trace(request Request) (Report, error) {
 		next := state
 		next.Frames = append([]Frame(nil), state.Frames...)
 		step := TraceStep{Sequence: state.ExecutedSteps + 1, PC: frame.PC, Opcode: inst.Opcode, Operands: inst.Operands, EventID: frame.EventID, Depth: len(state.Frames)}
-		if err := r.evaluate(&next, &step, inst, request.Inputs); err != nil {
+		if err := r.evaluateAndCharge(&next, &step, inst, request.Inputs); err != nil {
 			kind := "instruction_blocked"
+			var textErr textLimitError
+			if errors.As(err, &textErr) {
+				kind = "text_limit"
+			}
 			if !supported(inst.Opcode) {
 				kind = "unsupported_opcode"
 			}
-			return fail(kind, err.Error(), &inst)
+			failed, outer := fail(kind, err.Error(), &inst)
+			var nested *Blocker
+			if errors.As(err, &nested) {
+				failed.Blocker.Cause = nested
+			}
+			return failed, outer
 		}
-		if step.Message != nil && len(step.Message.Text) > r.options.MaxTextBytes-report.TextBytes {
-			return fail("text_limit", "maximum cumulative dialogue text byte count reached", &inst)
-		}
-		next.ExecutedSteps++
 		finishZeroFrames(&next)
 		if len(next.Frames) > 0 {
 			step.NextPC = next.Frames[len(next.Frames)-1].PC
 		}
 		state = next
 		report.Trace = append(report.Trace, step)
-		if step.Message != nil {
-			report.TextBytes += len(step.Message.Text)
-			report.DialogueIDs = append(report.DialogueIDs, step.Message.ID)
-		}
-		if step.Input != nil && step.Input.Input.Kind == InputBattle {
-			report.BattleOutcomesStubbed = true
-			if len(report.Assumptions) == 0 {
-				report.Assumptions = append(report.Assumptions, "Battle outcomes were supplied externally or simulated; no battle program was executed or validated.")
-			}
-		}
+		collectStepEvidence(&report, step)
+
 	}
 	report.Status = "script_stopped"
 	report.Completed = true
@@ -127,6 +131,7 @@ func finalize(report *Report, state State, inputs []Input) {
 	state.Frames = append([]Frame(nil), state.Frames...)
 	state.IdleFrames = maps.Clone(state.IdleFrames)
 	state.World = CloneWorld(state.World)
+	report.TextBytes = state.TextBytes
 	report.State = state
 	report.InputsConsumed = state.InputIndex
 	report.UnusedInputs = append([]Input(nil), inputs[state.InputIndex:]...)
@@ -159,6 +164,15 @@ func fallthroughPC(pc uint16) (uint16, error) {
 	return pc + 1, nil
 }
 func consume(state *State, inputs []Input, kind string) (*InputUse, error) {
+	if kind == InputRandom {
+		// Probability branches do not otherwise mutate/clone the world. Other
+		// random-consuming handlers already own detached working snapshots.
+		if state != nil && state.Random == nil && state.World != nil && state.World.RandomMode == "seeded" && state.InputIndex >= 0 && (state.InputIndex >= len(inputs) || inputs[state.InputIndex].Kind != InputRandom) {
+			state.World = CloneWorld(state.World)
+		}
+		_, use, err := consumeRandom(state, inputs, 1, 100, "probability branch")
+		return use, err
+	}
 	if state.InputIndex >= len(inputs) {
 		return nil, fmt.Errorf("explicit %s input is required", kind)
 	}
@@ -170,11 +184,16 @@ func consume(state *State, inputs []Input, kind string) (*InputUse, error) {
 	meaning := ""
 	switch kind {
 	case InputRandom:
-		valid = input.Value >= 1 && input.Value <= 100
-		meaning = "explicit RandomLong(1,100) result"
+		// The pinned reference's integer-division generator can reach 101
+		// at the tail even for a requested inclusive 1..100 range.
+		valid = input.Value >= 1 && input.Value <= 1+2147483647/(2147483647/100)
+		meaning = "explicit reference RandomLong(1,100) result, including its reachable division-tail value 101"
 	case InputConfirm:
 		valid = input.Value == 0 || input.Value == 1
 		meaning = "explicit confirmation: 0=no, 1=yes"
+	case InputKey:
+		valid = input.Value == 1
+		meaning = "explicit key acknowledgement"
 	case InputBattle:
 		valid = input.Value >= BattleWin && input.Value <= BattleFled
 		meaning = "external/simulated battle outcome: 0=won, 1=lost, 2=fled; combat not executed"
@@ -187,22 +206,13 @@ func consume(state *State, inputs []Input, kind string) (*InputUse, error) {
 	return used, nil
 }
 func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, inputs []Input) error {
-	if handled, err := r.evaluatePartyWalk(state, step, inst, inputs); handled {
+	if handled, err := r.evaluateCombat(state, step, inst, inputs); handled {
 		return err
 	}
 	if handled, err := r.evaluateTicks(state, step, inst, inputs); handled {
 		return err
 	}
-	if handled, err := r.evaluatePlayer(state, step, inst); handled {
-		return err
-	}
-	if handled, err := evaluateInventory(state, step, inst); handled {
-		return err
-	}
-	if handled, err := r.evaluateResources(state, step, inst); handled {
-		return err
-	}
-	if handled, err := evaluateWorld(state, step, inst); handled {
+	if handled, err := r.evaluateInterpreted(state, step, inst, inputs); handled {
 		return err
 	}
 	index := len(state.Frames) - 1
@@ -280,8 +290,12 @@ func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, input
 		state.Frames = append(state.Frames, Frame{PC: a[0], Entry: a[0], NextEntry: a[0], EventID: context})
 		step.Effect = "call trigger with explicit/inherited event context; callee return entry is ignored"
 	case 5:
-		if restriction := operandRestriction(inst); restriction != "" {
-			return errors.New(restriction)
+		if a[2] != 0 {
+			world := CloneWorld(state.World)
+			if err := updatePartyGestures(r.source, world, false); err != nil {
+				return fmt.Errorf("redraw standing gestures: %w", err)
+			}
+			state.World = world
 		}
 		if err := advance(); err != nil {
 			return err
@@ -291,36 +305,7 @@ func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, input
 			delay = 60
 		}
 		step.Screen = &ScreenRecord{Kind: "redraw", ClearDialogRequested: true, OverworldDelayMilliseconds: delay}
-		step.Effect = "record dialog-clear/redraw request only; conditional overworld delay recorded, no rendering, waiting or party gesture update executed"
-	case 0x43:
-		if err := advance(); err != nil {
-			return err
-		}
-		state.Music = a[0]
-		state.MusicKnown = true
-		audio := &AudioRecord{Kind: "music", ID: a[0], Loop: a[1] != 1, PlaybackRequested: true}
-		if a[1] == 3 && a[0] != 9 {
-			audio.FadeSeconds = 3
-		}
-		step.Audio = audio
-		step.Screen = &ScreenRecord{Kind: "clear_dialog", ClearDialogRequested: true}
-		step.Effect = "store background music ID and record playback/loop/fade request; audio not executed"
-	case 0x45:
-		if err := advance(); err != nil {
-			return err
-		}
-		state.BattleMusic = a[0]
-		state.BattleMusicKnown = true
-		step.Audio = &AudioRecord{Kind: "battle_music_config", ID: a[0]}
-		step.Screen = &ScreenRecord{Kind: "clear_dialog", ClearDialogRequested: true}
-		step.Effect = "store battle music ID; no playback requested by this instruction"
-	case 0x47:
-		if err := advance(); err != nil {
-			return err
-		}
-		step.Audio = &AudioRecord{Kind: "sound", ID: a[0], PlaybackRequested: true}
-		step.Screen = &ScreenRecord{Kind: "clear_dialog", ClearDialogRequested: true}
-		step.Effect = "record sound effect request; audio not executed"
+		step.Effect = fmt.Sprintf("record dialog-clear/redraw request and conditional overworld delay; standing gestures updated=%t; no rendering or wall-clock wait", a[2] != 0)
 	case 0x8e:
 		if err := advance(); err != nil {
 			return err

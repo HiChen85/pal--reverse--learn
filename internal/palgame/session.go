@@ -14,7 +14,11 @@ import (
 // permits event tests without executing OnEnter; that is an explicit assumption,
 // not evidence that the checkpoint is reachable in the original game.
 type SessionOptions struct {
+	RandomMode         string
+	BattleMode         string
+	BattleSeed         uint64
 	Assets             *palasset.SpriteCatalog
+	Maps               *palasset.MapCatalog
 	RedactText         bool
 	Scene              uint16
 	AssumeSceneEntered bool
@@ -29,12 +33,39 @@ type SessionSnapshot struct {
 	Actions         int                 `json:"actions"`
 }
 type Session struct {
+	runtime        *paldata.RuntimeTables
+	maps           *palasset.MapCatalog
+	lastInvocation *Invocation
 	initialization Initialization
 	assets         *palasset.SpriteCatalog
 	redactText     bool
 	game           *paldata.Game
 	current        SessionSnapshot
 	maxSteps       int
+}
+
+type Invocation struct {
+	Request palflow.Request `json:"request"`
+	Options palflow.Options `json:"options"`
+}
+
+func (s *Session) LastInvocation() *Invocation {
+	if s.lastInvocation == nil {
+		return nil
+	}
+	out := *s.lastInvocation
+	out.Request.World = palflow.CloneWorld(out.Request.World)
+	out.Request.IdleFrames = maps.Clone(out.Request.IdleFrames)
+	out.Request.Inputs = append([]palflow.Input(nil), out.Request.Inputs...)
+	return &out
+}
+
+func (s *Session) source() Source {
+	return Source{Runtime: s.runtime, Game: s.game, Assets: s.assets, Maps: s.maps, RedactText: s.redactText}
+}
+
+func (s *Session) runnerOptions() palflow.Options {
+	return palflow.Options{MaxSteps: s.maxSteps, MaxCallDepth: 64, MaxTextBytes: 1 << 20}
 }
 
 func NewSession(g *paldata.Game, r *paldata.RuntimeTables, options SessionOptions) (*Session, error) {
@@ -53,7 +84,33 @@ func NewSession(g *paldata.Game, r *paldata.RuntimeTables, options SessionOption
 	if limit < 1 || limit > palflow.MaxAllowedSteps {
 		return nil, errors.New("session step limit out of range")
 	}
-	return &Session{initialization: initial, game: g, assets: options.Assets, redactText: options.RedactText, maxSteps: limit, current: SessionSnapshot{World: palflow.CloneWorld(initial.World), LastEventID: initial.LastEventID, ScriptSuccess: initial.ScriptSuccess, IdleFrames: InitialIdleFrames(g), NeedsSceneEnter: !options.AssumeSceneEntered}}, nil
+	world := palflow.CloneWorld(initial.World)
+	world.RandomMode = options.RandomMode
+	if world.RandomMode == "" {
+		world.RandomMode = "seeded"
+	}
+	if world.RandomMode != "seeded" && world.RandomMode != "explicit" {
+		return nil, errors.New("unsupported random input policy")
+	}
+	world.BattleMode = options.BattleMode
+	if world.BattleMode == "" {
+		world.BattleMode = "auto_attack"
+	}
+	if world.BattleMode != "auto_attack" && world.BattleMode != "disabled" {
+		return nil, errors.New("unsupported battle policy")
+	}
+	world.BattleRandomState = options.BattleSeed
+	if world.BattleRandomState == 0 {
+		world.BattleRandomState = 1
+	}
+
+	if options.AssumeSceneEntered && options.Maps != nil {
+		world, err = (Source{Game: g, Assets: options.Assets, Maps: options.Maps}).LoadResources(world, true, true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &Session{runtime: r, maps: options.Maps, initialization: initial, game: g, assets: options.Assets, redactText: options.RedactText, maxSteps: limit, current: SessionSnapshot{World: world, LastEventID: initial.LastEventID, ScriptSuccess: initial.ScriptSuccess, IdleFrames: InitialIdleFrames(g), NeedsSceneEnter: !options.AssumeSceneEntered}}, nil
 }
 
 // Initialization returns detached bootstrap evidence, including mutable callback
@@ -77,24 +134,31 @@ func (s *Session) Snapshot() SessionSnapshot {
 	return out
 }
 func (s *Session) Enter(inputs []palflow.Input) (palflow.Report, error) {
+	s.lastInvocation = nil
 	if !s.current.NeedsSceneEnter {
 		return palflow.Report{}, errors.New("current scene has already entered; reset or select an explicit checkpoint to replay")
 	}
-	if s.current.World.SceneLoadPending {
-		return palflow.Report{}, errors.New("scene/map resources must be loaded before entering the requested scene")
+	world := palflow.CloneWorld(s.current.World)
+	if world.SceneLoadPending || (s.maps != nil && world.SceneResources == nil) {
+		var err error
+		world, err = s.source().LoadResources(world, true, world.SceneResources == nil)
+		if err != nil {
+			return palflow.Report{}, err
+		}
 	}
 	scene := s.current.World.Scene
 	record, ok := s.current.World.Scenes[scene]
 	if !ok {
 		return palflow.Report{}, errors.New("current scene missing")
 	}
-	return s.invoke(record.OnEnter, 0xffff, scene, 0, inputs)
+	return s.invokePrepared(record.OnEnter, 0xffff, scene, 0, inputs, world)
 }
 
 // Trigger checks scene membership and active state. Position/direction/search
 // distance and automatic touch detection are deliberately not inferred; the
 // caller explicitly requests this logical interaction and the report says so.
 func (s *Session) Trigger(eventID uint16, inputs []palflow.Input) (palflow.Report, error) {
+	s.lastInvocation = nil
 	if s.current.NeedsSceneEnter {
 		return palflow.Report{}, errors.New("scene OnEnter has not completed")
 	}
@@ -129,15 +193,20 @@ func (s *Session) eventRange(scene uint16) (uint16, uint16, error) {
 	return current.EventStart, next.EventStart, nil
 }
 func (s *Session) invoke(entry, eventID, scene, triggerID uint16, inputs []palflow.Input) (palflow.Report, error) {
-	world := palflow.CloneWorld(s.current.World)
+	return s.invokePrepared(entry, eventID, scene, triggerID, inputs, palflow.CloneWorld(s.current.World))
+}
+
+func (s *Session) invokePrepared(entry, eventID, scene, triggerID uint16, inputs []palflow.Input, world *palflow.WorldState) (palflow.Report, error) {
 	if triggerID == 0 {
 		world.SceneChanged = false
 	}
 	req := palflow.Request{Entry: entry, EventID: eventID, LastEventID: s.current.LastEventID, IdleFrames: maps.Clone(s.current.IdleFrames), World: world, Inputs: append([]palflow.Input(nil), inputs...)}
-	runner, err := palflow.New(Source{Game: s.game, RedactText: s.redactText, Assets: s.assets}, palflow.Options{MaxSteps: s.maxSteps, MaxCallDepth: 64, MaxTextBytes: 1 << 20})
+	options := s.runnerOptions()
+	runner, err := palflow.New(s.source(), options)
 	if err != nil {
 		return palflow.Report{}, err
 	}
+	s.lastInvocation = &Invocation{Request: req, Options: options}
 	report, err := runner.Trace(req)
 	report.Assumptions = append(report.Assumptions, "Logical interaction checkpoint only: spatial reachability, direction, collision and automatic world scheduling are not verified.")
 	if err != nil {

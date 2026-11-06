@@ -1,5 +1,5 @@
-// Package palasset imports bounded, read-only metadata from local PAL assets.
-// It does not render pixels, execute resource contents, or distribute game data.
+// Package palasset imports bounded, read-only local PAL assets and decodes
+// indexed bitmaps. It does not execute resource contents or distribute game data.
 package palasset
 
 import (
@@ -29,6 +29,9 @@ type FrameInfo struct {
 	Index       int
 	Offset, End int
 	Safe        bool
+	// TerminalFallback means the last directory end was zero. Its End was
+	// inferred from a complete RLE bitmap followed by at most one padding byte.
+	TerminalFallback bool
 }
 
 type UnsafeFrame struct {
@@ -96,6 +99,13 @@ func OpenMGO(path string, maxDecoded int) (*SpriteCatalog, error) {
 	}
 	if len(data) > MaxArchiveBytes || int64(len(data)) != info.Size() {
 		return nil, errors.New("MGO: resource exceeds bound or changed size while reading")
+	}
+	after, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if !os.SameFile(info, after) || after.Size() != info.Size() || !after.ModTime().Equal(info.ModTime()) {
+		return nil, errors.New("MGO: resource changed while reading")
 	}
 	archive, err := pal.Open(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -173,6 +183,41 @@ func (c *SpriteCatalog) Sprite(id uint16) (SpriteInfo, error) {
 	return cloneInfo(meta), nil
 }
 
+// Frame independently decodes one sprite on demand and copies one checked RLE
+// frame. It validates both its directory span and complete bitmap payload; a
+// directory-safe frame with malformed runs is still rejected. No pixel or
+// compressed data cache is retained, and returned bytes cannot mutate metadata
+// or the archive snapshot. Callers may cache frames they need for rendering.
+func (c *SpriteCatalog) Frame(id uint16, index int) ([]byte, error) {
+	if c == nil || c.archive == nil {
+		return nil, errors.New("MGO: nil sprite catalog")
+	}
+	if index < 0 {
+		return nil, fmt.Errorf("MGO sprite %d: frame index %d out of range", id, index)
+	}
+	compressed, err := c.archive.ReadChunk(int(id))
+	if err != nil {
+		return nil, fmt.Errorf("MGO sprite %d: %w", id, err)
+	}
+	decoded, err := palcodec.DecodeYJ1(compressed, c.maxDecoded)
+	if err != nil {
+		return nil, fmt.Errorf("MGO sprite %d: %w", id, err)
+	}
+	info := inspectSprite(id, int64(len(compressed)), decoded)
+	if index >= len(info.Frames) {
+		return nil, fmt.Errorf("MGO sprite %d: frame index %d out of range", id, index)
+	}
+	frame := info.Frames[index]
+	if !frame.Safe || frame.Offset < 0 || frame.End <= frame.Offset || frame.End > len(decoded) {
+		return nil, fmt.Errorf("MGO sprite %d: unsafe frame %d", id, index)
+	}
+	data := decoded[frame.Offset:frame.End]
+	if _, _, _, err := walkRLE(data, MaxRLEPixels, nil); err != nil {
+		return nil, fmt.Errorf("MGO sprite %d frame %d: %w", id, index, err)
+	}
+	return append([]byte(nil), data...), nil
+}
+
 func cloneInfo(info SpriteInfo) SpriteInfo {
 	info.Frames = append([]FrameInfo(nil), info.Frames...)
 	info.UnsafeFrames = append([]UnsafeFrame(nil), info.UnsafeFrames...)
@@ -214,6 +259,19 @@ func inspectSprite(id uint16, compressed int64, data []byte) SpriteInfo {
 		end := int(binary.LittleEndian.Uint16(data[(i+1)*2:])) * 2
 		frame := FrameInfo{Index: i, Offset: start, End: end, Safe: true}
 		reason := ""
+		// Some GOP directories terminate in zero instead of a WORD end
+		// offset. Accept only the final entry, a valid start and one complete
+		// RLE bitmap occupying the remainder (plus optional WORD padding).
+		// This does not repair other offsets or emulate broken-sprite hacks.
+		if i == len(x.Frames)-1 && end == 0 && start >= directoryBytes && start < len(data) {
+			_, _, consumed, err := walkRLE(data[start:], MaxRLEPixels, nil)
+			if err == nil && len(data)-start-consumed <= 1 {
+				frame.End = start + consumed
+				frame.TerminalFallback = true
+				x.Frames[i] = frame
+				continue
+			}
+		}
 		switch {
 		case start < directoryBytes:
 			reason = "frame starts inside directory"

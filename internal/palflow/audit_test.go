@@ -73,11 +73,11 @@ func TestConditionalRedrawSupportInInventoryAndAudit(t *testing.T) {
 			redraw = count
 		}
 	}
-	if !redraw.Supported || redraw.Count != 2 || redraw.ModeledCount != 1 || len(redraw.OperandConstraints) == 0 || inventory.ModeledInstructions != 4 {
+	if !redraw.Supported || redraw.Count != 2 || redraw.ModeledCount != 2 || len(redraw.OperandConstraints) == 0 || inventory.ModeledInstructions != 5 {
 		t.Fatalf("operand-constrained support hidden: %+v", inventory)
 	}
 	audit := Audit(scripts, 1)
-	if !reflect.DeepEqual(audit.Reachable, []uint16{1, 2}) || len(audit.Blockers) != 1 || audit.Blockers[0].PC != 2 || !strings.Contains(audit.Blockers[0].Reason, "PAL_UpdatePartyGestures") {
-		t.Fatalf("static audit passed gesture update: %+v", audit)
+	if !reflect.DeepEqual(audit.Reachable, []uint16{1, 2, 3, 4}) || len(audit.Blockers) != 0 {
+		t.Fatalf("static audit lost modeled gesture update: %+v", audit)
 	}
 }

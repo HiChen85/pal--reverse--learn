@@ -166,7 +166,7 @@ func TestRuntimeReferencesUseObjectIndirectionAndSentinels(t *testing.T) {
 }
 
 func TestLoadRuntimeOnlyNeedsBoundedRegularData(t *testing.T) {
-	c := runtimeFixture()
+	c := runtimeFullFixture()
 	dir := t.TempDir()
 	path := filepath.Join(dir, "dAtA.mKf")
 	if err := os.WriteFile(path, mkf(c[:]...), 0600); err != nil {
@@ -176,7 +176,7 @@ func TestLoadRuntimeOnlyNeedsBoundedRegularData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(r.Enemies) != 1 || len(r.EnemyTeams) != 1 || len(r.Stores) != 1 || r.Source.Name != "dAtA.mKf" || r.Source.Size != int64(len(mkf(c[:]...))) || len(r.Source.SHA256) != 64 {
+	if len(r.Enemies) != 1 || len(r.EnemyTeams) != 1 || len(r.Stores) != 1 || len(r.Magics) != 1 || len(r.Battlefields) != 1 || len(r.LevelUpMagics) != 1 || !r.HasBattleTables || r.Source.Name != "dAtA.mKf" || r.Source.Size != int64(len(mkf(c[:]...))) || len(r.Source.SHA256) != 64 {
 		t.Fatal("runtime metadata")
 	}
 	if err := os.WriteFile(filepath.Join(dir, "DATA.MKF"), mkf(c[:]...), 0600); err != nil {
@@ -222,7 +222,14 @@ func TestRuntimeLocalInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("runtime table counts: roles=%d enemies=%d teams=%d stores=%d", len(r.Roles), len(r.Enemies), len(r.EnemyTeams), len(r.Stores))
+	t.Logf("runtime table counts: roles=%d enemies=%d teams=%d stores=%d magics=%d battlefields=%d level-up-magic-rows=%d battle-effects=%d enemy-position-rows=%d level-up-exp=%d", len(r.Roles), len(r.Enemies), len(r.EnemyTeams), len(r.Stores), len(r.Magics), len(r.Battlefields), len(r.LevelUpMagics), len(r.BattleEffectIndex), len(r.EnemyPositions), len(r.LevelUpExp))
+	// Metadata only: this recognized local resource set is never embedded in
+	// test fixtures. A different digest is allowed without guessing a release.
+	if r.Source.SHA256 == "d9e82696a42d93f9623c63714a68a12645c7d650776eaa8510ec27b7c35e819a" {
+		if r.Source.Size != 66418 || len(r.Enemies) != 154 || len(r.EnemyTeams) != 380 || len(r.Stores) != 21 || len(r.Magics) != 104 || len(r.Battlefields) != 65 || len(r.LevelUpMagics) != 20 || !r.HasBattleTables {
+			t.Fatal("recognized local resource metadata differs")
+		}
+	}
 	if cp := os.Getenv("PALDATA_RUNTIME_ENCODING"); cp != "" {
 		layout := os.Getenv("PALDATA_RUNTIME_LAYOUT")
 		if layout == "" {

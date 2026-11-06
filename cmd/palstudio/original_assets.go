@@ -17,29 +17,9 @@ const originalSpriteDecodeLimit = 8 << 20
 // loadOriginalAssets selects only MGO.MKF, case-insensitively and without aliases
 // or ambiguous duplicate names. OpenMGO owns the bounded immutable byte snapshot.
 func loadOriginalAssets(dir string) (*palasset.SpriteCatalog, *paldata.FileInfo, error) {
-	entries, err := os.ReadDir(dir)
+	name, err := originalResourceName(dir, "MGO.MKF")
 	if err != nil {
 		return nil, nil, err
-	}
-	name := ""
-	for _, entry := range entries {
-		if !strings.EqualFold(entry.Name(), "MGO.MKF") {
-			continue
-		}
-		if name != "" {
-			return nil, nil, fmt.Errorf("MGO.MKF 名称不唯一：%q 和 %q", name, entry.Name())
-		}
-		info, err := entry.Info()
-		if err != nil {
-			return nil, nil, err
-		}
-		if !info.Mode().IsRegular() {
-			return nil, nil, errors.New("MGO.MKF 必须是普通文件，不接受符号链接或目录")
-		}
-		name = entry.Name()
-	}
-	if name == "" {
-		return nil, nil, errors.New("未找到 MGO.MKF；需要精灵加载的指令将停止")
 	}
 	catalog, err := palasset.OpenMGO(filepath.Join(dir, name), originalSpriteDecodeLimit)
 	if err != nil {
@@ -49,14 +29,70 @@ func loadOriginalAssets(dir string) (*palasset.SpriteCatalog, *paldata.FileInfo,
 	return catalog, identity, nil
 }
 
+func originalResourceName(dir, wanted string) (string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+	name := ""
+	for _, entry := range entries {
+		if !strings.EqualFold(entry.Name(), wanted) {
+			continue
+		}
+		if name != "" {
+			return "", fmt.Errorf("%s 名称不唯一：%q 和 %q", wanted, name, entry.Name())
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return "", err
+		}
+		if !info.Mode().IsRegular() {
+			return "", fmt.Errorf("%s 必须是普通文件，不接受符号链接或目录", wanted)
+		}
+		name = entry.Name()
+	}
+	if name == "" {
+		return "", fmt.Errorf("未找到 %s；需要此资源的操作将停止", wanted)
+	}
+	return name, nil
+}
+
+func loadOriginalMaps(dir string) (*palasset.MapCatalog, []paldata.FileInfo, error) {
+	mapName, err := originalResourceName(dir, "MAP.MKF")
+	if err != nil {
+		return nil, nil, err
+	}
+	gopName, err := originalResourceName(dir, "GOP.MKF")
+	if err != nil {
+		return nil, nil, err
+	}
+	catalog, err := palasset.OpenMaps(filepath.Join(dir, mapName), filepath.Join(dir, gopName))
+	if err != nil {
+		return nil, nil, err
+	}
+	return catalog, []paldata.FileInfo{{Name: mapName, SHA256: catalog.MAPSourceSHA256(), Size: catalog.MAPSourceSize()}, {Name: gopName, SHA256: catalog.GOPSourceSHA256(), Size: catalog.GOPSourceSize()}}, nil
+}
+
+func loadOriginalPalette(dir string) (*palasset.PaletteCatalog, *paldata.FileInfo, error) {
+	name, err := originalResourceName(dir, "PAT.MKF")
+	if err != nil {
+		return nil, nil, err
+	}
+	catalog, err := palasset.OpenPAT(filepath.Join(dir, name))
+	if err != nil {
+		return nil, nil, err
+	}
+	return catalog, &paldata.FileInfo{Name: name, SHA256: catalog.SourceSHA256(), Size: catalog.SourceSize()}, nil
+}
+
 func originalDiagnosticOptions() palflow.Options {
 	return palflow.Options{MaxSteps: 1000, MaxCallDepth: 32, MaxTextBytes: 256 << 10}
 }
 
-// These are the fixed limits used by palgame.Session; replay tests compare its
-// actual report with the request and limits exported by the UI.
+// These are the default session limits. The work budget can be changed before
+// reset; evidence always records the actual session invocation's options.
 func originalSessionOptions() palflow.Options {
-	return palflow.Options{MaxSteps: 1000, MaxCallDepth: 64, MaxTextBytes: 1 << 20}
+	return palflow.Options{MaxSteps: 10000, MaxCallDepth: 64, MaxTextBytes: 1 << 20}
 }
 
 type originalSceneDisplay struct {
