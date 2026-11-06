@@ -196,6 +196,51 @@ func TestJourneyContinuousSpatialPickupMoveSceneEnterAndRollback(t *testing.T) {
 	}
 }
 
+func TestJourneyCompactPreservesHashesMessagesWorkAndFailureEvidence(t *testing.T) {
+	dir, spec := journeyFixture(t)
+	spec.Actions = append(spec.Actions, journeyAction{Type: "interact", Inputs: []palflow.Input{}}, journeyAction{Type: "trigger", Event: journeyUint(2), Inputs: []palflow.Input{}}, journeyAction{Type: "enter", Inputs: []palflow.Input{}}, journeyAction{Type: "trigger", Event: journeyUint(3), Inputs: []palflow.Input{}})
+	path := journeyRouteFile(t, spec)
+	var full, compact journeyReport
+	lengths := []int{}
+	for _, mode := range []string{"full", "compact"} {
+		args := []string{"-data", dir, "-route", path}
+		if mode == "compact" {
+			args = append(args, "-compact")
+		}
+		var out bytes.Buffer
+		if err := runJourney(args, &out, &bytes.Buffer{}); err == nil {
+			t.Fatal("late unsupported opcode was skipped")
+		}
+		lengths = append(lengths, out.Len())
+		result := &full
+		if mode == "compact" {
+			result = &compact
+		}
+		if err := json.Unmarshal(out.Bytes(), result); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if compact.TraceDetail != "compact" || full.TraceDetail != "full" || journeyDigest(compact.Final) != journeyDigest(full.Final) || lengths[1] >= lengths[0] || len(compact.Actions) != len(full.Actions) {
+		t.Fatal("compact mode changed actual execution or failed to compact")
+	}
+	for i, c := range compact.Actions {
+		f := full.Actions[i]
+		if c.BeforeSHA256 != f.BeforeSHA256 || c.AfterSHA256 != f.AfterSHA256 || c.Work != f.Work || journeyDigest(c.MessageIDs) != journeyDigest(f.MessageIDs) {
+			t.Fatal("compact action lost execution evidence", i)
+		}
+		if i == len(compact.Actions)-1 {
+			if c.Trace == nil || c.Trace.Blocker == nil || c.Trace.Blocker.Opcode != 0x7fff || c.Invocation == nil || c.Committed {
+				t.Fatal("compact mode omitted failed trace")
+			}
+		} else if c.Trace != nil || c.Control != nil || c.Invocation != nil || c.Delta != nil {
+			t.Fatal("successful compact action retained full detail")
+		}
+	}
+	if journeyDigest(compact.Actions[1].MessageIDs) != journeyDigest([]uint16{0}) {
+		t.Fatal("actual dialogue references omitted")
+	}
+}
+
 func TestJourneyExpectationFailureReportsActualCommit(t *testing.T) {
 	dir, spec := journeyFixture(t)
 	spec.Actions[0].ExpectedScene = journeyUint(2)
@@ -276,7 +321,7 @@ func TestJourneyStrictRouteFormat(t *testing.T) {
 
 func TestJourneyItemSelectionAndRandomRanges(t *testing.T) {
 	_, spec := journeyFixture(t)
-	spec.Actions = append(spec.Actions, journeyAction{Type: "use_item", Item: journeyUint(1), TargetRole: journeyUint(0), Inputs: []palflow.Input{{Kind: palflow.InputRandom, Value: 0}, {Kind: palflow.InputRandom, Value: 2147483647}}})
+	spec.Actions = append(spec.Actions, journeyAction{Type: "use_item", Item: journeyUint(1), TargetRole: journeyUint(0), Inputs: []palflow.Input{{Kind: palflow.InputRandom, Value: 0}, {Kind: palflow.InputRandom, Value: 2147483647}, {Kind: palflow.InputShop, Value: 0}, {Kind: palflow.InputShop, Value: 65535}}})
 	if _, _, err := loadJourneyRoute(journeyRouteFile(t, spec)); err != nil {
 		t.Fatal("usable-item action or opcode-specific random range rejected", err)
 	}
@@ -318,6 +363,35 @@ func TestLocalJourneyOpeningWineAndVillage(t *testing.T) {
 		}
 	}
 	t.Logf("actions=%d final scene=%d position=(%d,%d) cash=%d reportBytes=%d", len(report.Actions), report.Final.World.Scene, report.Final.World.PartyX, report.Final.World.PartyY, report.Final.World.Cash, output.Len())
+}
+
+func TestLocalJourneyIslandLandfall(t *testing.T) {
+	dir := os.Getenv("PAL_GAME_DATA_DIR")
+	if dir == "" {
+		t.Skip("set PAL_GAME_DATA_DIR to the hash-matched local sample")
+	}
+	var out bytes.Buffer
+	if err := runJourney([]string{"-data", dir, "-compact", "-route", "../../testdata/routes/sample-opening-island-landfall.json"}, &out, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	var r journeyReport
+	if err := json.Unmarshal(out.Bytes(), &r); err != nil {
+		t.Fatal(err)
+	}
+	if !r.Completed || r.FullGameVerified || r.TraceDetail != "compact" || len(r.Actions) != 1084 || r.Final.World.Scene != 15 || r.Final.World.PartyX != 752 || r.Final.World.PartyY != 808 || r.Final.World.Inventory[279] != 1 || r.Final.World.Inventory[272] != 0 {
+		t.Fatal("island landfall route mismatch")
+	}
+	messages := 0
+	for _, a := range r.Actions {
+		messages += len(a.MessageIDs)
+		if !a.Committed || !a.ExpectationsMatched || a.Action.Type == "trigger" {
+			t.Fatal("island route bypassed spatial control or failed")
+		}
+	}
+	if messages != 372 {
+		t.Fatal("island dialogue count mismatch", messages)
+	}
+	t.Logf("actions=%d messages=%d final scene=%d bytes=%d", len(r.Actions), messages, r.Final.World.Scene, out.Len())
 }
 
 func TestJourneyInputIdentityAndAliases(t *testing.T) {

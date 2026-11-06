@@ -68,6 +68,10 @@ func (s *Session) runnerOptions() palflow.Options {
 	return palflow.Options{MaxSteps: s.maxSteps, MaxCallDepth: 64, MaxTextBytes: 1 << 20}
 }
 
+// ExecutionOptions exposes the immutable limits used by this session so a
+// compact route report can reproduce them without retaining every invocation.
+func (s *Session) ExecutionOptions() palflow.Options { return s.runnerOptions() }
+
 func NewSession(g *paldata.Game, r *paldata.RuntimeTables, options SessionOptions) (*Session, error) {
 	scene := options.Scene
 	if scene == 0 {

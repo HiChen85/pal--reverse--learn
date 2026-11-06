@@ -346,3 +346,16 @@ func TestGestureRedrawRestoresStandingWithoutWorldTick(t *testing.T) {
 		t.Fatal("redraw standing gesture effect or atomicity mismatch", err)
 	}
 }
+
+func TestStopMusicClearsMutableConfigurationWithoutWorldTick(t *testing.T) {
+	for _, tc := range []struct {
+		operand uint16
+		fade    float64
+	}{{0, 2}, {1, 3}, {65535, 196605}} {
+		runner, _ := New(tables{scripts: []Instruction{ins(0), ins(0x77, tc.operand), ins(0)}}, Options{})
+		r, err := runner.Trace(Request{Entry: 1, World: &WorldState{Music: 87, MusicKnown: true, FrameNum: 7}})
+		if err != nil || r.State.Music != 0 || !r.State.MusicKnown || r.State.World.Music != 0 || r.State.World.FrameNum != 7 || r.Trace[0].Audio.FadeSeconds != tc.fade || r.Trace[0].Audio.Loop || r.Trace[0].Audio.Executed {
+			t.Fatal("music stop configuration/fade mismatch", err)
+		}
+	}
+}

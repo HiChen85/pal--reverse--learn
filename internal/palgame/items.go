@@ -47,7 +47,11 @@ func (s *Session) UseItem(item, target uint16, inputs []palflow.Input) (palflow.
 			return palflow.Report{}, errors.New("item target must be a current party role")
 		}
 	}
-	req := palflow.Request{Entry: object[2], EventID: target, LastEventID: s.current.LastEventID, IdleFrames: maps.Clone(s.current.IdleFrames), World: palflow.CloneWorld(w), Inputs: append([]palflow.Input(nil), inputs...)}
+	prepared, err := palflow.CompactInventory(w)
+	if err != nil {
+		return palflow.Report{}, err
+	}
+	req := palflow.Request{Entry: object[2], EventID: target, LastEventID: s.current.LastEventID, IdleFrames: maps.Clone(s.current.IdleFrames), World: prepared, Inputs: append([]palflow.Input(nil), inputs...)}
 	options := s.runnerOptions()
 	runner, err := palflow.New(s.source(), options)
 	if err != nil {

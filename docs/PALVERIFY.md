@@ -46,7 +46,7 @@ go run ./cmd/palverify journey -data "$PAL_DATA" \
 
 Session 默认采用明确的 `auto_attack` 数值战斗策略和种子1的模型随机源；这不是原版随机分布的一致性声明。没有预先给定胜利结果。支持的回调、毒/状态、经验和奖励由 Go 执行；未实现行动或无失败分支的战败阻断。单次独立 `trace` 仍可显式提供外部战斗结果，并标记 `battle_outcomes_stubbed`。
 
-路线仅允许严格UTF-8 JSON，拒绝重复键、未知字段、null、拼写别名及多文档，最大1MiB/10,000动作。每动作默认10,000统一工作预算，可用 `-max-steps` 设置1..100,000；嵌套脚本、装备、自动更新、帧和战斗共享预算。报告最大32MiB。嵌套 `world/idle_frames` 省略，保留初始计时表、每步状态差异、调用前摘要和最终完整快照，字段 `trace_state_encoding` 说明重建方式。报告超限不会伪称已经执行的动作被回滚。
+路线仅允许严格UTF-8 JSON，拒绝重复键、未知字段、null、拼写别名及多文档，最大1MiB/10,000动作。每动作默认10,000统一工作预算，可用 `-max-steps` 设置1..100,000；嵌套脚本、装备、自动更新、帧和战斗共享预算。报告最大32MiB。`-compact` 对成功动作保留输入、真实消息ID、工作量、前后SHA-256及最终完整快照，省略完整轨迹和差异；中间状态须重跑固定路线复核，失败动作保留可用完整诊断。完整模式中嵌套 `world/idle_frames` 省略，保留初始计时表、每步状态差异、调用前摘要和最终完整快照，字段 `trace_state_encoding` 说明重建方式。报告超限不会伪称已经执行的动作被回滚。
 
 ## 单次诊断
 
@@ -59,7 +59,7 @@ go run ./cmd/palverify enter -data "$PAL_DATA" -layout dos -encoding big5 \
 
 `trace` 路线格式与 `journey` 不同：固定四表摘要、`request`（入口/事件/计时/输入及可选世界快照）和 `expected_messages`。`event_id=65535` 复用末次上下文，0表示无事件上下文；补充状态是调用者声明，不能当作真实可达检查点。
 
-输入有 `confirm` 0/1、`key` 1、`random`、`battle` 0胜/1败/2逃。通用随机输入允许0..2147483647，由指令进一步验证具体区间与参考整数除法尾部边界。直接 `trace` 的旧路线解析器对某些随机输入仍有更窄限制；连续路线按当前 `journey` 规则。默认隐藏正文，`-include-text` 仅本地核对，请勿提交商业台词。
+输入有 `confirm` 0/1、`key` 1、`random`、`shop` 0关闭或物品对象ID、`battle` 0胜/1败/2逃。买卖按实际需要另外消费确认输入，缺钱不询问确认；重复选择可多次交易，整个菜单失败回滚，选择计入玩家子工作预算。卖出菜单按原语义压缩零数量槽；购买在满包/99上限时仍扣钱，此参考行为保留并记录。通用随机输入允许0..2147483647，由指令进一步验证具体区间与参考整数除法尾部边界。直接 `trace` 的旧路线解析器对某些随机输入仍有更窄限制；连续路线按当前 `journey` 规则。默认隐藏正文，`-include-text` 仅本地核对，请勿提交商业台词。
 
 ## MyGo 原版数据页
 
@@ -75,7 +75,7 @@ PAL_GAME_DATA_DIR="$PAL_DATA" go test ./internal/palgame -run TestLocal -v
 PAL_MAP_ASSET_DIR="$PAL_DATA" PAL_PIXEL_ASSET_DIR="$PAL_DATA" go test ./internal/palasset -run Local -v
 ```
 
-无对应资源时本地回归跳过，CI合成测试不能替代实际样本结果。固定客栈路线546动作/194消息引用，最终场景4、现金550、桂花酒归零。未执行原 APK/PC 程序，也没有完成全主支线。
+无对应资源时本地回归跳过，CI合成测试不能替代实际样本结果。固定客栈路线546动作/194消息引用，最终场景4、现金550、桂花酒归零。新增 `sample-opening-island-landfall.json` 连续1084动作/372消息引用，终点场景15 `(752,808)`、破天锤279×1，可配合 `-compact` 使用。精简报告也保留 `battles`，区分Go数值结果 `numeric` 与外部给定结果 `supplied`。未执行原 APK/PC 程序，也没有完成全主支线。
 
 未知指令、越界、预算、缺失/剩余输入和断言错误返回非零；完整 Session 动作失败回滚。`completed` 只代表所请求模型动作完成，所有报告继续保留 `full_game_verified:false`。
 

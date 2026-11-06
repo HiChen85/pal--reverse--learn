@@ -69,6 +69,9 @@ type journeyInvocation struct {
 }
 
 type journeyActionReport struct {
+	Battles             []journeyBattleSummary `json:"battles,omitempty"`
+	MessageIDs          []uint16               `json:"message_ids"`
+	Work                int                    `json:"work"`
 	Index               int                    `json:"index"`
 	Action              journeyAction          `json:"action"`
 	Committed           bool                   `json:"committed"`
@@ -83,7 +86,17 @@ type journeyActionReport struct {
 	EvidenceOmitted     string                 `json:"evidence_omitted,omitempty"`
 }
 
+type journeyBattleSummary struct {
+	Mode      string `json:"mode"`
+	EnemyTeam uint16 `json:"enemy_team"`
+	RawResult uint16 `json:"raw_result"`
+	Rounds    int    `json:"rounds"`
+	Work      int    `json:"work"`
+}
+
 type journeyReport struct {
+	ExecutionPolicy    journeyPolicy           `json:"execution_policy"`
+	TraceDetail        string                  `json:"trace_detail"`
 	Version            int                     `json:"format_version"`
 	Kind               string                  `json:"kind"`
 	Name               string                  `json:"name"`
@@ -102,6 +115,13 @@ type journeyReport struct {
 	Final              palgame.SessionSnapshot `json:"final"`
 }
 
+type journeyPolicy struct {
+	VM                 palflow.Options `json:"vm"`
+	RandomMode         string          `json:"random_mode"`
+	BattleMode         string          `json:"battle_mode"`
+	InitialRandomState uint64          `json:"initial_random_state"`
+}
+
 func runJourney(args []string, out, errout io.Writer) error {
 	fs := flag.NewFlagSet("journey", flag.ContinueOnError)
 	fs.SetOutput(errout)
@@ -112,6 +132,7 @@ func runJourney(args []string, out, errout io.Writer) error {
 	dest := fs.String("out", "", "JSON 报告路径；默认 stdout")
 	initPath := fs.String("init-route", "", "生成固定七文件摘要及单个 enter 动作的 JSON 路线")
 	maxSteps := fs.Int("max-steps", 10000, "每个动作的统一执行预算")
+	compact := fs.Bool("compact", false, "成功动作只保留输入、消息ID、工作量和前后摘要；失败保留完整轨迹")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -210,7 +231,7 @@ func runJourney(args []string, out, errout io.Writer) error {
 	if err != nil {
 		return err
 	}
-	report, executionErr := executeJourney(session, spec, routeDigest, summarize(g), files)
+	report, executionErr := executeJourneyDetail(session, spec, routeDigest, summarize(g), files, *compact)
 	if err := journeyWriteReport(*dest, report, out); err != nil {
 		return err
 	}
@@ -231,12 +252,22 @@ func journeySetting(name, cli, route, fallback string) (string, error) {
 }
 
 func executeJourney(session *palgame.Session, spec journeyRoute, routeDigest string, dataset datasetSummary, files []fileEvidence) (journeyReport, error) {
+	return executeJourneyDetail(session, spec, routeDigest, dataset, files, false)
+}
+
+func executeJourneyDetail(session *palgame.Session, spec journeyRoute, routeDigest string, dataset datasetSummary, files []fileEvidence, compact bool) (journeyReport, error) {
 	initial := session.Initialization()
 	initial.World = nil
 	before := session.Snapshot()
 	beforeJSON, _ := json.Marshal(before)
 	beforeDigest := journeyBytesDigest(beforeJSON)
 	report := journeyReport{Version: 1, Kind: "continuous_session_journey", Name: spec.Name, RouteSHA256: routeDigest, Dataset: dataset, Files: files, Initialization: initial, InitialSHA256: journeyDigest(before), InitialIdleFrames: before.IdleFrames, TraceStateEncoding: "Nested world and idle_frames are omitted. Initial imported world + initial_idle_frames + ordered action deltas reconstruct session snapshots; final includes the complete snapshot. Invocation digests identify prepared world and idle_frames.", Actions: []journeyActionReport{}, Scope: "One continuous new-game Session with imported local MGO/MAP/GOP resources. enter runs required scene OnEnter; move/interact use modeled frame order, collision and search; use_item executes the selected item's original script. Explicit trigger selects an event ID and does not establish spatial reachability. Battles use the Go numeric auto-attack policy and seeded model RNG. Original-runtime parity, a complete main story and all side quests are not verified."}
+	report.TraceDetail = "full"
+	report.ExecutionPolicy = journeyPolicy{VM: session.ExecutionOptions(), RandomMode: before.World.RandomMode, BattleMode: before.World.BattleMode, InitialRandomState: before.World.BattleRandomState}
+	if compact {
+		report.TraceDetail = "compact"
+		report.TraceStateEncoding = "Successful actions retain input, actual message IDs, work and before/after SHA-256. Full per-step trace and deltas are omitted by request; intermediate worlds require replay of the hash-bound route. Failed actions retain full available evidence. Final includes complete snapshot."
+	}
 	used := 0
 	var executionErr error
 	for index, action := range spec.Actions {
@@ -281,16 +312,30 @@ func executeJourney(session *palgame.Session, spec journeyRoute, routeDigest str
 			entry.Control = &control
 		}
 		after := session.Snapshot()
+		entry.Battles = journeyBattles(entry.Trace, entry.Control)
 		afterJSON, _ := json.Marshal(after)
 		entry.Committed = actionErr == nil
 		entry.AfterSHA256 = journeyBytesDigest(afterJSON)
-		entry.Delta = journeyJSONDiff(beforeJSON, afterJSON)
+		entry.MessageIDs = append([]uint16{}, messages...)
+		if entry.Trace != nil {
+			s := entry.Trace.State
+			entry.Work = s.ExecutedSteps + s.PlayerSubsteps + s.WorldTicks + s.AutoSubsteps + s.CombatWork
+		}
+		if entry.Control != nil {
+			entry.Work = entry.Control.Work
+		}
 		if actionErr == nil {
 			actionErr = journeyExpect(action, messages, after)
 		}
 		entry.ExpectationsMatched = actionErr == nil
 		if actionErr != nil {
 			entry.Error = actionErr.Error()
+		}
+		if compact && actionErr == nil {
+			entry.Trace, entry.Control, entry.Invocation = nil, nil, nil
+			entry.Delta = nil
+		} else {
+			entry.Delta = journeyJSONDiff(beforeJSON, afterJSON)
 		}
 		encoded, _ := json.MarshalIndent(entry, "    ", "  ")
 		if len(encoded)+used > journeyActionBudget {
@@ -307,7 +352,6 @@ func executeJourney(session *palgame.Session, spec journeyRoute, routeDigest str
 		encoded, _ = json.MarshalIndent(entry, "    ", "  ")
 		used += len(encoded) + 2
 		report.Actions = append(report.Actions, entry)
-		before = after
 		beforeJSON, beforeDigest = afterJSON, entry.AfterSHA256
 		if actionErr != nil {
 			executionErr = fmt.Errorf("journey action %d (%s): %w", index+1, action.Type, actionErr)
@@ -344,6 +388,11 @@ func journeyControlMessages(control palgame.ControlReport) []uint16 {
 			}
 			for _, child := range tick.AutoSteps {
 				auto(child)
+			}
+		}
+		if step.Combat != nil {
+			for _, trigger := range step.Combat.Triggers {
+				messages = append(messages, trigger.DialogueIDs...)
 			}
 		}
 		if step.Message != nil {
@@ -720,6 +769,10 @@ func checkJourneyRoute(spec journeyRoute, data []byte) error {
 				return errors.New("journey input 需要 value")
 			}
 			switch input.Kind {
+			case palflow.InputShop:
+				if input.Value < 0 || input.Value > 65535 {
+					return errors.New("journey shop 输入须为0..65535；0关闭，其余是物品ID")
+				}
 			case palflow.InputRandom:
 				if input.Value < 0 || input.Value > 2147483647 {
 					return errors.New("journey random 输入须为0..2147483647；具体范围由指令校验")

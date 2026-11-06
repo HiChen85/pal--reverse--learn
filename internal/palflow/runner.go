@@ -164,6 +164,9 @@ func fallthroughPC(pc uint16) (uint16, error) {
 	return pc + 1, nil
 }
 func consume(state *State, inputs []Input, kind string) (*InputUse, error) {
+	if state == nil || state.InputIndex < 0 || state.InputIndex > len(inputs) {
+		return nil, errors.New("input cursor outside supplied stream")
+	}
 	if kind == InputRandom {
 		// Probability branches do not otherwise mutate/clone the world. Other
 		// random-consuming handlers already own detached working snapshots.
@@ -194,6 +197,9 @@ func consume(state *State, inputs []Input, kind string) (*InputUse, error) {
 	case InputKey:
 		valid = input.Value == 1
 		meaning = "explicit key acknowledgement"
+	case InputShop:
+		valid = input.Value >= 0 && input.Value <= 65535
+		meaning = "shop selection: 0=close menu, otherwise item object ID"
 	case InputBattle:
 		valid = input.Value >= BattleWin && input.Value <= BattleFled
 		meaning = "external/simulated battle outcome: 0=won, 1=lost, 2=fled; combat not executed"

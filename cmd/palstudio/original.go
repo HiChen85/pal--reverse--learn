@@ -283,6 +283,10 @@ func decodeOriginalInputs(data string) ([]palflow.Input, error) {
 		}
 		i := len(result)
 		switch in.Kind {
+		case palflow.InputShop:
+			if in.Value < 0 || in.Value > 65535 {
+				return nil, fmt.Errorf("输入 %d 的 shop 必须为0..65535；0关闭，其余为物品ID", i)
+			}
 		case palflow.InputRandom:
 			if in.Value < 0 || in.Value > 2147483647 {
 				return nil, fmt.Errorf("输入 %d 的 random 必须为 0..2147483647；具体指令另行检查其范围", i)
@@ -360,7 +364,7 @@ func (o *originalData) run(kind string) error {
 		}
 	}
 	options := originalDiagnosticOptions()
-	runner, err := palflow.New(palgame.Source{Game: o.game, Assets: o.assets, Maps: o.maps}, options)
+	runner, err := palflow.New(palgame.Source{Game: o.game, Runtime: o.runtime, Assets: o.assets, Maps: o.maps}, options)
 	if err != nil {
 		return err
 	}
@@ -612,7 +616,7 @@ func (a *workbench) originalView(c *ui.Context) {
 	if !o.useSession {
 		ui.Text(c, "单次诊断每次从导入快照开始；运行表可用时附加初始世界快照，否则世界指令会阻塞。它不会恢复上次调用的世界状态。").FontSize(12).TextColor(t.TextMuted)
 	}
-	ui.Text(c, "显式输入 JSON（按消费顺序）：confirm 0/1；key 1=按键确认；random 0..2147483647（具体指令检查范围）；battle 0/1/2=外部给定胜/败/逃跑，不会执行原版战斗。默认 []，缺少输入会保留阻塞原因。").FontSize(12).TextColor(t.TextMuted)
+	ui.Text(c, "显式输入 JSON（按消费顺序）：confirm 0/1；key 1；shop 0关闭、其他值为选购物品ID；random 0..2147483647（具体指令检查范围）。会话战斗执行Go数值自动攻击；独立诊断的battle 0/1/2为外部给定胜/败/逃。缺少输入会保留阻塞原因。").FontSize(12).TextColor(t.TextMuted)
 	ui.Text(c, `JSON 示例：[{"kind":"confirm","value":1}]；不确定的分支请保留 [] 以查看缺少输入的阻塞点。`).FontSize(12).TextColor(t.TextMuted)
 	ui.TextArea(c.Key("original-inputs"), &o.inputsJSON).Label("原版显式输入 JSON").Font("monospace").Height(85).FillWidth()
 	if len(o.game.Warnings) > 0 {

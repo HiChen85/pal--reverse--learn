@@ -20,6 +20,8 @@ func presentationOpcodeName(op uint16) string {
 		return "fade in current palette"
 	case 0x73:
 		return "request scene fade"
+	case 0x77:
+		return "stop music and clear current music configuration"
 	case 0x85:
 		return "request a wall-clock delay without world updates"
 	}
@@ -95,6 +97,17 @@ func (r *Runner) evaluatePresentation(s *State, step *TraceStep, inst Instructio
 		}
 	case 0x73:
 		evidence.Screen = &ScreenRecord{Kind: "fade_scene", Delay: a[0]}
+	case 0x77:
+		s.Music, s.MusicKnown = 0, true
+		if w != nil {
+			w.Music, w.MusicKnown = 0, true
+		}
+		fade := float64(a[0]) * 3
+		if a[0] == 0 {
+			fade = 2
+		}
+		evidence.Audio = &AudioRecord{Kind: "music", ID: 0, Loop: false, FadeSeconds: fade, PlaybackRequested: true}
+		evidence.Screen = &ScreenRecord{Kind: "clear_dialog", ClearDialogRequested: true}
 	case 0x85:
 		evidence.Screen = &ScreenRecord{Kind: "delay", DelayMilliseconds: uint32(a[0]) * 80}
 	}

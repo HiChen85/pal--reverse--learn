@@ -115,17 +115,42 @@ func (a *workbench) originalPlayView(c *ui.Context) {
 	}
 	sort.Strings(items)
 	items = slices.Compact(items)
-	roles := []string{"65535"}
-	for _, id := range s.World.PartyRoles {
-		roles = append(roles, strconv.Itoa(int(id)))
+	o.item = validSelection(o.item, items)
+	itemNames := make([]string, len(items))
+	for i, key := range items {
+		id, _ := strconv.ParseUint(key, 10, 16)
+		name := o.originalWord(uint16(id))
+		if count := s.World.Inventory[uint16(id)]; count > 0 {
+			itemNames[i] = fmt.Sprintf("%s ×%d", name, count)
+		} else {
+			itemNames[i] = name + "（装备）"
+		}
 	}
+	roles, roleNames := []string{}, []string{}
+	id, _ := strconv.ParseUint(o.item, 10, 16)
+	if s.World.Objects[uint16(id)][6]&16 != 0 {
+		roles, roleNames = []string{"65535"}, []string{"全体队员"}
+	} else {
+		for _, id := range s.World.PartyRoles {
+			roles = append(roles, strconv.Itoa(int(id)))
+			roleNames = append(roleNames, o.originalWord(s.World.Roles[id][3]))
+		}
+	}
+	o.itemRole = validSelection(o.itemRole, roles)
 	ui.Row(c).Gap(8).Children(func() {
-		ui.Select(c.Key("original-use-item"), &o.item, items).Label("使用物品 ID").Width(130)
-		ui.Select(c.Key("original-item-role"), &o.itemRole, roles).Label("人物 ID（全体为65535）").Width(200)
+		selectNamed(c.Key("original-use-item"), &o.item, items, itemNames).Label("物品（数量）").Width(200)
+		selectNamed(c.Key("original-item-role"), &o.itemRole, roles, roleNames).Label("使用目标").Width(160)
 		if ui.Button(c.Key("original-item-submit"), "使用物品").Disabled(o.changedSource() || len(items) == 0).Clicked() {
 			a.report(o.runUseItem(), "物品使用动作已提交")
 		}
 	})
+}
+
+func (o *originalData) originalWord(id uint16) string {
+	if o.game != nil && int(id) < len(o.game.Words) && o.game.Words[id] != "" {
+		return o.game.Words[id]
+	}
+	return fmt.Sprintf("未命名 %d", id)
 }
 
 func (o *originalData) runUseItem() error {

@@ -72,11 +72,11 @@ go run ./cmd/paltool mkf /path/to/your/data.mkf
 
 目标仍为用户指定的 PAL1 / Windows 98 柔情篇。用户提供页面中的新 APK 已取得可导入数据，但实际为 **DOS 六 WORD 对象布局、Big5 与 YJ1**；页面的“98”名称不能确认原 Windows 发行身份。输入身份、计数和哈希见 [INPUT_DATA.md](docs/INPUT_DATA.md)。
 
-`palverify` 支持导入、审计、单次诊断与 `journey` 连续空间路线。当前固定样本已从新游戏实际移动、调查、使用桂花酒，完成客栈任务并进入余杭村：**546 个连续动作、194 次消息引用，无显式事件 ID 跳转**。路线仅含资源摘要、数字输入和消息 ID，见 [路线](testdata/routes/sample-opening-wine-village.json)。这段实际模型回放不代表全主线、全部支线或原程序运行对照通过；最新边界见 [缺陷队列](docs/BUGS.md)。
+`palverify` 支持导入、审计、单次诊断与 `journey` 连续空间路线。当前固定样本已从新游戏实际移动、调查、使用桂花酒，完成客栈、求药准备、登船航行并在仙灵岛落地：**1084 个连续动作、372 次消息引用，无显式事件 ID 跳转**。路线仅含资源摘要、数字输入和消息 ID，见 [路线](testdata/routes/sample-opening-island-landfall.json)。这段实际模型回放不代表全主线、全部支线或原程序运行对照通过；最新边界见 [缺陷队列](docs/BUGS.md)。
 
 ```sh
 go run ./cmd/palverify journey -data "$PAL_DATA" \
-  -route testdata/routes/sample-opening-wine-village.json -out reports/opening-journey.json
+  -compact -route testdata/routes/sample-opening-island-landfall.json -out reports/opening-journey.json
 ```
 
 目录另需 `MGO.MKF`、`MAP.MKF`、`GOP.MKF`；原生 UI 的彩色视口另需 `PAT.MKF`。资源留在用户本地。完整命令与证据范围见 [PALVERIFY.md](docs/PALVERIFY.md)。

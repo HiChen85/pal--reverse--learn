@@ -27,9 +27,9 @@ The callback interface is transactional: `Begin(Snapshot)` creates private state
 `Commit(Snapshot)` receives the final copied combat state and must publish all
 changes atomically, or none on error. Every failed round calls `Rollback`;
 random and execution failures never reach `Commit`. A random error remains fatal even if callback code ignores
-it. Nonzero scripts without callbacks fail visibly. Fighter replacement,
-script-assigned outcomes and mutation of engine-owned reward/round fields are
-unsupported. The engine has one owner; the caller serializes access.
+it. Nonzero scripts without callbacks fail visibly. Typed forced victory/defeat/escape/termination, object callback changes and
+magic damage overrides propagate transactionally. Fighter replacement and
+arbitrary mutation of engine-owned reward/round fields remain unsupported. The engine has one owner; the caller serializes access.
 
 Victory applies cash, primary experience, random stat growth, learned spells and
 half of missing HP/MP recovery, including dead members' recovery. Dead members
@@ -40,9 +40,10 @@ ongoing snapshots, while hidden track counts are written during victory growth.
 
 Attack-all equipment/roles, confused/puppet actions, thrown items, cooperative
 magic, trance/summons, topology changes, negative magic damage and nonpositive
-signed enemy HP fail explicitly when encountered. Active poison and hiding state
-are not represented by this API; the integrating world must reject such states
-until their round hooks are implemented. The model has no UI auto-target history;
+signed enemy HP fail explicitly when encountered. Poison callbacks run at turn end in party/slot then enemy/slot order,
+including source continuation behavior after a cure. Hiding skips enemy turns,
+counts down and gates turn-start callbacks. These hooks share the transaction
+and explicit random stream. The model has no UI auto-target history;
 an eliminated explicit target is replaced cyclically from its selected slot.
 Equipment effects must already be evaluated by the caller; their presence is
 never inferred from the equipment IDs. The integration must apply stored object

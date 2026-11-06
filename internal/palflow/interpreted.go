@@ -11,6 +11,9 @@ import (
 // respective dispatchers, so one auto instruction cannot accidentally run a
 // trigger-only operation with different semantics.
 func (r *Runner) evaluateInterpreted(s *State, step *TraceStep, inst Instruction, inputs []Input) (bool, error) {
+	if ok, err := r.evaluateShop(s, step, inst, inputs); ok {
+		return true, err
+	}
 	if ok, err := r.evaluatePoison(s, step, inst, inputs); ok {
 		return true, err
 	}

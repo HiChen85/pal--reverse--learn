@@ -201,6 +201,51 @@ func TestOriginalNativeControlsSearchFromPositionAndRollback(t *testing.T) {
 	}
 }
 
+func TestOriginalNativeItemMenuCommitsConsumptionAndExportsIntent(t *testing.T) {
+	dir := originalMapRuntimeFixture(t)
+	rewriteOriginalSSS(t, dir, func(c [][]byte) { binary.LittleEndian.PutUint16(c[2][22:], 9) }) // DOS object1 usable + consuming.
+	if err := os.WriteFile(filepath.Join(dir, "WORD.DAT"), []byte("Hero      Medicine  Token     "), 0600); err != nil {
+		t.Fatal(err)
+	}
+	a, err := newWorkbench(content.Demo())
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.tab = 5
+	a.original = newOriginalData()
+	a.original.directory = dir
+	tt := ui.NewTester(a.view, 1400, 4000)
+	for _, label := range []string{"读取原版数据", "逻辑会话", "执行场景 OnEnter", "向东 ↘", "调查"} {
+		if err := tt.Click(label); err != nil || a.failed {
+			t.Fatal(label, err, a.message)
+		}
+	}
+	o := a.original
+	before := o.session.Snapshot()
+	if before.World.Inventory[1] != 1 {
+		t.Fatal("pickup did not reach menu")
+	}
+	if err := tt.Click("使用物品"); err != nil || a.failed {
+		t.Fatal("native item choice failed", err, a.message)
+	}
+	r := o.history[len(o.history)-1]
+	if !r.SessionCommitted || r.Kind != "use_item" || r.ActionIntent.Item == nil || *r.ActionIntent.Item != 1 || r.ActionIntent.TargetRole == nil || *r.ActionIntent.TargetRole != 0 || r.Request == nil || r.Request.World.Inventory[1] != 1 || r.SessionAfter.World.Inventory[1] != 0 || r.SessionAfter.World.FrameNum != before.World.FrameNum {
+		t.Fatal("menu consumption, real request or target intent omitted")
+	}
+	o.exportPath = filepath.Join(t.TempDir(), "item.json")
+	if err := o.export(); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(o.exportPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var exported originalEvidence
+	if err := json.Unmarshal(data, &exported); err != nil || exported.Invocation.ActionIntent.Item == nil || !exported.Invocation.SessionCommitted || exported.Invocation.SessionAfter.World.Inventory[1] != 0 {
+		t.Fatal("export lost item action result", err)
+	}
+}
+
 func TestOriginalMissingMapsAllowDiagnosticsButBlockPendingScene(t *testing.T) {
 	o := newOriginalData()
 	o.directory = originalRuntimeFixture(t)

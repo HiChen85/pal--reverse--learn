@@ -46,6 +46,9 @@ func opcodeName(op uint16) string {
 	case 0xffff:
 		return "message_table_reference"
 	default:
+		if name := shopOpcodeName(op); name != "" {
+			return name
+		}
 		if name := poisonOpcodeName(op); name != "" {
 			return name
 		}

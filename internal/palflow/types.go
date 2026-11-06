@@ -35,6 +35,7 @@ const (
 	InputConfirm = "confirm"
 	InputBattle  = "battle"
 	InputKey     = "key"
+	InputShop    = "shop"
 	BattleWin    = 0
 	BattleLost   = 1
 	BattleFled   = 2
@@ -109,6 +110,7 @@ type ScreenRecord struct {
 	Rendered                   bool   `json:"rendered"`
 }
 type TraceStep struct {
+	Shop           *ShopRecord         `json:"shop,omitempty"`
 	WorldUpdates   []WorldUpdateRecord `json:"world_updates,omitempty"`
 	Combat         *CombatExecution    `json:"combat,omitempty"`
 	RandomInputs   []InputUse          `json:"random_inputs,omitempty"`

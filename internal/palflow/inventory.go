@@ -12,6 +12,29 @@ type InventorySlot struct {
 
 const inventoryCapacity = 256
 
+// CompactInventory is the menu's stable removal of zero-amount slots. In-use
+// reservations remain attached to positive stacks; discarded slots are zeroed.
+func CompactInventory(world *WorldState) (*WorldState, error) {
+	if world == nil {
+		return nil, fmt.Errorf("inventory compaction requires a world")
+	}
+	w := CloneWorld(world)
+	slots, _, err := checkedInventory(w, true)
+	if err != nil {
+		return nil, err
+	}
+	to := 0
+	for _, slot := range slots {
+		if slot.Amount > 0 {
+			slots[to] = slot
+			to++
+		}
+	}
+	clear(slots[to:])
+	w.InventorySlots, w.Inventory = slots, inventoryCounts(slots)
+	return w, nil
+}
+
 // ChangeInventory applies the original ordered-slot add/remove operation on a
 // detached world. Menu actions use the same retained-zero and partial-removal
 // behavior as script instructions. The result is the source success/shortage.
