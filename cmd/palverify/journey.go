@@ -89,11 +89,12 @@ type journeyActionReport struct {
 }
 
 type journeyBattleSummary struct {
-	Mode      string `json:"mode"`
-	EnemyTeam uint16 `json:"enemy_team"`
-	RawResult uint16 `json:"raw_result"`
-	Rounds    int    `json:"rounds"`
-	Work      int    `json:"work"`
+	AllTargetSweeps int    `json:"all_target_sweeps,omitempty"`
+	Mode            string `json:"mode"`
+	EnemyTeam       uint16 `json:"enemy_team"`
+	RawResult       uint16 `json:"raw_result"`
+	Rounds          int    `json:"rounds"`
+	Work            int    `json:"work"`
 }
 
 type journeyReport struct {

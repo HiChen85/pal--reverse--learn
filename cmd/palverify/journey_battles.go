@@ -39,7 +39,17 @@ func journeyBattles(report *palflow.Report, control *palgame.ControlReport) []jo
 			if s.Combat.Policy == "fast_verify" {
 				mode = "fast_verify"
 			}
-			found = append(found, journeyBattleSummary{Mode: mode, EnemyTeam: s.Operands[0], RawResult: s.Combat.RawResult, Rounds: len(s.Combat.Reports), Work: s.Combat.Work})
+			sweeps := 0
+			// Each executed sweep records one critical draw, even under
+			// Bravery. Script randomness uses separate reason strings.
+			for _, round := range s.Combat.Reports {
+				for _, draw := range round.Draws {
+					if draw.Reason == "attack_all.critical" {
+						sweeps++
+					}
+				}
+			}
+			found = append(found, journeyBattleSummary{Mode: mode, EnemyTeam: s.Operands[0], RawResult: s.Combat.RawResult, Rounds: len(s.Combat.Reports), Work: s.Combat.Work, AllTargetSweeps: sweeps})
 			for _, callback := range s.Combat.Triggers {
 				reports(callback)
 			}

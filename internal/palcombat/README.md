@@ -14,7 +14,7 @@ Reports retain successful draws and failed source attempts. External sources are
 never rewound. Fractions use the explicit integer interval `[0,1000000]` supplied
 through `Intn(1000001)`; this is a replay input model, not SDLPal's RNG generator.
 
-Supported numeric rules include single-target attacks, critical/role-zero bonus
+Supported numeric rules include single-target and equipment-enabled all-target attacks, critical/role-zero bonus
 hits, dual attacks, defense, flee/boss restrictions, enemy physical/magic choices,
 dual moves, auto-defense/cover, classic initiative and status ticks. A disabled
 member who recovers during the round retains the classic zero-speed automatic
@@ -63,9 +63,19 @@ seven hidden growth paths; without them the report explicitly lists omitted
 hidden growth. Counters are reset on entry. They remain available separately in
 ongoing snapshots, while hidden track counts are written during victory growth.
 
-Attack-all equipment/roles, confused/puppet actions, thrown items, cooperative
-magic, trance/player-summon magic, negative magic damage and nonpositive
-signed enemy HP fail explicitly when encountered. Poison callbacks run at turn end in party/slot then enemy/slot order,
+All-target physical attacks follow fixed slot order 2/1/0/4/3 with successive
+halving and one critical draw per sweep. Seven equipment-effect slots determine
+eligibility; the base role AttackAll column is not consulted by the reference.
+Selected enemy attacks promote automatically. There are no single-target damage
+bonus, role-zero doubling or variance draws in this branch. Dual sweeps retain
+the WORD health between hits, then fighter collection tests it as signed SHORT.
+FLOAT subtraction truncates remaining health before WORD wrapping. Negative
+FLOAT-to-WORD conversion is not a portable C guarantee: Go defines an explicit
+modulo compatibility rule matching the retained native-reference observations.
+
+Confused/puppet actions, thrown items, cooperative magic, trance/player-summon
+magic, negative magic damage and zero imported enemy HP fail explicitly when
+encountered. Poison callbacks run at turn end in party/slot then enemy/slot order,
 including source continuation behavior after a cure. Hiding skips enemy turns,
 counts down and gates turn-start callbacks. These hooks share the transaction
 and explicit random stream. The model has no UI auto-target history;

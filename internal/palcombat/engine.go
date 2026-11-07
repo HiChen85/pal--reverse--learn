@@ -257,16 +257,7 @@ func (e *Engine) validate(actions []Action) (map[uint16]Action, error) {
 			if a.ObjectID != 0 {
 				return nil, fmt.Errorf("palcombat: physical attack takes no object")
 			}
-			all := p.Role.AttackAll != 0
-			if p.EquipmentEffects != nil {
-				for _, slot := range p.EquipmentEffects {
-					all = all || slot[4] != 0
-				}
-			}
-			if all {
-				return nil, &UnsupportedError{Feature: "attack-all equipment/role"}
-			}
-			if err := e.livingEnemy(a.Target); err != nil {
+			if err := e.validatePhysicalTarget(p.Player, a.Target); err != nil {
 				return nil, err
 			}
 		case Defend, Flee, Pass:
@@ -474,14 +465,8 @@ func (e *Engine) playerAction(s *Snapshot, i int, a Action, r *Report) error {
 	}
 	switch a.Kind {
 	case Attack:
-		all := p.Role.AttackAll != 0
-		if p.EquipmentEffects != nil {
-			for _, slot := range p.EquipmentEffects {
-				all = all || slot[4] != 0
-			}
-		}
-		if all {
-			return &UnsupportedError{Feature: "attack-all equipment/role"}
+		if canAttackAll(p.Player) {
+			return e.attackAll(s, i, r)
 		}
 		target := a.Target.Index
 		if target < 0 || target >= len(s.Enemies) || !enemyPresent(s.Enemies[target]) || s.Enemies[target].HP <= 0 {
@@ -744,7 +729,7 @@ func (e *Engine) collect(s *Snapshot, r *Report) {
 		if !enemyPresent(*x) {
 			continue
 		}
-		if x.HP > 0 {
+		if int16(uint16(x.HP)) > 0 {
 			alive = true
 		} else if !x.Rewarded {
 			x.Rewarded = true

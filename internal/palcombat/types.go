@@ -212,9 +212,11 @@ type Event struct {
 	Target      Side   `json:"target_side,omitempty"`
 	TargetIndex int    `json:"target_index,omitempty"`
 	ObjectID    uint16 `json:"object_id,omitempty"`
-	HP          int    `json:"hp,omitempty"`
-	MP          int    `json:"mp,omitempty"`
-	Critical    bool   `json:"critical,omitempty"`
+	// HP is a display-style damage/healing amount, not an authoritative raw
+	// WORD delta. Enemy snapshots retain wrapped health during all-target hits.
+	HP       int  `json:"hp,omitempty"`
+	MP       int  `json:"mp,omitempty"`
+	Critical bool `json:"critical,omitempty"`
 }
 
 type Rewards struct {

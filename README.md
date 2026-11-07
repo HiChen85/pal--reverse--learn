@@ -97,6 +97,8 @@ go run ./cmd/palverify campaign -data "$PAL_DATA" \
 
 后续固定清单 [苏州入城](testdata/routes/sample-opening-suzhou-campaign.json) 已独立从新游戏连续验证 **5688动作、1383次消息引用**。回归检查夜会前后实际获得御剑术345、苏州入城队伍为角色0/1，并保留16场真实Go战斗中的两次剧情脚本终止结果。后续[客栈苗人／刘晋元清单](testdata/routes/sample-opening-jinyuan-campaign.json)已独立验证6031动作、1413消息引用，人群按脚本散开。沿用上方campaign命令，替换manifest路径即可；全主支线尚未通过。
 
+新增[蛇洞连续清单](testdata/routes/sample-opening-snake-cave-campaign.json)：7304动作、2011次消息引用，覆盖比武、林府剧情与蛇洞入口段。已修复装备群攻阻塞；25场实际Go战斗中记录6次真实群攻扫击。沿用campaign命令替换清单路径即可，继续使用fast_verify与每动作工作预算100000。该记录仍未覆盖全主支线。
+
 
 MyGo 的“原版数据”页可选择目录、编码和布局，记录单次调用或启用持续逻辑会话；“声明场景已进入”仅用于显式检查点测试。除了显式检查点回归，当前已从真实 `NewSession` 执行场景 1 开场脚本，再连续验证事件 5/6/7 的消息 ID、库存与重复触发拒绝；这属于逻辑顺序回放，没有证明地图上的调查距离、方向或原版程序行为一致。
 
