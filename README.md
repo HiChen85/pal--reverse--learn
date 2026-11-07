@@ -95,6 +95,9 @@ go run ./cmd/palverify campaign -data "$PAL_DATA" \
 
 父目录须已存在，输出目录中预定报告不能已存在。[分段验证说明](docs/PAL_CAMPAIGN.md)解释摘要链与失败记录；清单执行成功仍不代表全主支线已通关。
 
+后续固定清单 [苏州入城](testdata/routes/sample-opening-suzhou-campaign.json) 已独立从新游戏连续验证 **5688动作、1383次消息引用**。回归检查夜会前后实际获得御剑术345、苏州入城队伍为角色0/1，并保留16场真实Go战斗中的两次剧情脚本终止结果。沿用上方campaign命令，替换manifest路径即可；全主支线尚未通过。
+
+
 MyGo 的“原版数据”页可选择目录、编码和布局，记录单次调用或启用持续逻辑会话；“声明场景已进入”仅用于显式检查点测试。除了显式检查点回归，当前已从真实 `NewSession` 执行场景 1 开场脚本，再连续验证事件 5/6/7 的消息 ID、库存与重复触发拒绝；这属于逻辑顺序回放，没有证明地图上的调查距离、方向或原版程序行为一致。
 
 使用方法见 [palverify 工具](docs/PALVERIFY.md)，验收标准见 [主支线验证](docs/WIN98_VALIDATION.md)，待处理问题见 [BUGS](docs/BUGS.md)。GitHub 上传授权步骤见 [连接授权说明](docs/GITHUB_AUTH.md)。
