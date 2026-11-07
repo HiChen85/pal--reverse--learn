@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "river-names",
+  "title": "沿河寻名 · 独立扩展章",
+  "start": "river-arrival",
+  "characters": [],
+  "items": [
+    {
+      "id": "river-lantern",
+      "name": "渡灯",
+      "description": "纸灯上的字迹仍在。回复十点灵力。",
+      "heal_hp": 0,
+      "restore_mp": 10
+    }
+  ],
+  "encounters": [],
+  "nodes": [
+    {
+      "id": "river-arrival",
+      "speaker": "lin-yue",
+      "text": "我们带着旧簿来到河岸。每到傍晚，河对岸便有人放灯，却没有渡船。",
+      "next": "river-choice"
+    },
+    {
+      "id": "river-choice",
+      "speaker": "su-qing",
+      "text": "灯上写着旧簿中的名字。这不是告别，而是一封约定。",
+      "choices": [
+        {"text": "沿河寻找放灯的人", "next": "river-end"},
+        {"text": "回看前章留下的线索", "next": "ending"}
+      ]
+    },
+    {
+      "id": "river-end",
+      "text": "河风吹过，最后一盏灯停在芦苇旁。第三章的入口，可以从这里续写。",
+      "set_flags": {"followed-lanterns": true}
+    }
+  ]
+}

@@ -1,0 +1,6004 @@
+{
+  "version": 1,
+  "name": "lin-serpent-revelation-and-snake-cave",
+  "encoding": "big5",
+  "layout": "dos",
+  "files_sha256": {
+    "DATA.MKF": "d9e82696a42d93f9623c63714a68a12645c7d650776eaa8510ec27b7c35e819a",
+    "GOP.MKF": "dbb17aeb8fcef6e24232b05abb58d5e9acf06a868b73bc0dc6c9a9e955fffb9c",
+    "M.MSG": "f79231667969c751dc88c13d1596f26faacfe25907af27b9e194a65f9b150315",
+    "MAP.MKF": "1f1fdf71257e3769d1ee3494336a8ae3a5d7690dce710803fa357bbc48023d88",
+    "MGO.MKF": "a9f9fc0ceeccb354906a96eaf6003f9c7ece8db6789856144201d926f5ff76b1",
+    "SSS.MKF": "38252bae8dabaebe9c780f00e8e6829bce56f89d862ecf9d44cc7b135047ed5d",
+    "WORD.DAT": "856fd6649a3e5bf143af30281eb33b2c67b1f6776290ce9650b065b1f78f49bb"
+  },
+  "optional_files_sha256": {
+    "PAT.MKF": "78b08ef4c4630b703c714da25ab6482d4524a577c56c9554a369bbf30cc67eab",
+    "RNG.MKF": "226a7932b94548071ecfb6274ac069f890ea347aef99c79c72b69655457310a3",
+    "FBP.MKF": "f38d0243a4f635886f27324c2a44016e7ff46db2146c853ab8edda12b8d5652c"
+  },
+  "actions": [
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        318,
+        2795,
+        2796,
+        371,
+        2797,
+        2798,
+        318,
+        2799,
+        2800,
+        371,
+        2801,
+        2802,
+        318,
+        2803,
+        2804,
+        2805,
+        371,
+        2806,
+        318,
+        2807,
+        371,
+        2808,
+        318,
+        2809,
+        2810
+      ]
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        320,
+        2816,
+        318,
+        2817,
+        320,
+        2818,
+        2819,
+        318,
+        2820,
+        2821,
+        320,
+        2822,
+        318,
+        2823,
+        320,
+        2824,
+        2825,
+        318,
+        2826,
+        2827,
+        2828,
+        320,
+        2829,
+        318,
+        2830,
+        2831,
+        2832,
+        320,
+        2833,
+        2834,
+        2835,
+        2836,
+        318,
+        2837,
+        320,
+        2838,
+        318,
+        2839,
+        2840,
+        320,
+        2841,
+        2842,
+        318,
+        2843,
+        2844,
+        320,
+        2845
+      ]
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        2856,
+        2857,
+        2858
+      ]
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        2621,
+        2861,
+        2862,
+        2863,
+        2864,
+        318,
+        2865,
+        2866,
+        2867,
+        2868,
+        2869,
+        2870,
+        2871,
+        2872,
+        2621,
+        2873,
+        2621,
+        2874,
+        2875,
+        2876,
+        2621,
+        2877,
+        2878,
+        2621,
+        2879,
+        2880,
+        2881,
+        332,
+        2882,
+        2621,
+        2883,
+        2884,
+        2885,
+        2886,
+        2621,
+        2887,
+        2888,
+        2875,
+        2889
+      ]
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        332,
+        2891
+      ]
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": [
+        332,
+        2891
+      ]
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        318,
+        2892,
+        320,
+        2893,
+        2894,
+        318,
+        2895,
+        320,
+        2896,
+        320,
+        2897,
+        2898,
+        2899,
+        318,
+        2900,
+        2901,
+        320,
+        2902
+      ]
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        9449,
+        9450,
+        9451,
+        9452,
+        9453
+      ]
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": [
+        332,
+        2903,
+        2904,
+        320,
+        2905,
+        2906,
+        2907,
+        2621,
+        2908,
+        320,
+        2909,
+        2621,
+        2910,
+        2911,
+        320,
+        2912,
+        2913,
+        2884,
+        2914,
+        2915,
+        2916,
+        318,
+        2918,
+        2884,
+        2919,
+        318,
+        2921,
+        320,
+        2922,
+        2923,
+        2884,
+        2924,
+        2925,
+        2926,
+        2927,
+        318,
+        2929,
+        318,
+        2931,
+        2932,
+        320,
+        2933,
+        2934,
+        2935,
+        2884,
+        2936,
+        2937,
+        2621,
+        2938,
+        2939,
+        2940,
+        2941,
+        2942,
+        2943,
+        320,
+        2944,
+        2945,
+        2946,
+        2621,
+        2947
+      ]
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        320,
+        2971,
+        2972,
+        318,
+        2973,
+        320,
+        2974,
+        2975,
+        2976,
+        318,
+        2977,
+        2978,
+        2979,
+        320,
+        2980,
+        318,
+        2981,
+        320,
+        2982,
+        2983,
+        2984,
+        2985,
+        318,
+        2986,
+        2987,
+        320,
+        2988,
+        318,
+        2989,
+        2990,
+        2991,
+        320,
+        2992,
+        320,
+        2993,
+        2994,
+        2995,
+        2996,
+        2997,
+        2998,
+        2999,
+        3000,
+        3001,
+        318,
+        3002,
+        3003
+      ]
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": [
+        318,
+        2960,
+        320,
+        2961,
+        318,
+        2962,
+        320,
+        2963,
+        318,
+        2964,
+        2965,
+        320,
+        2966,
+        2967,
+        318,
+        2968,
+        320,
+        2969,
+        2970
+      ]
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 1,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 3,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 2,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "move",
+      "direction": 0,
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "interact",
+      "inputs": [],
+      "expected_messages": []
+    },
+    {
+      "type": "enter",
+      "inputs": [],
+      "expected_messages": [],
+      "expected_scene": 46
+    }
+  ]
+}
