@@ -35,12 +35,13 @@ const (
 var journeyFileNames = []string{"SSS.MKF", "DATA.MKF", "M.MSG", "WORD.DAT", "MGO.MKF", "MAP.MKF", "GOP.MKF"}
 
 type journeyRoute struct {
-	Version     int               `json:"version"`
-	Name        string            `json:"name"`
-	Encoding    string            `json:"encoding,omitempty"`
-	Layout      string            `json:"layout,omitempty"`
-	FilesSHA256 map[string]string `json:"files_sha256"`
-	Actions     []journeyAction   `json:"actions"`
+	Version             int               `json:"version"`
+	Name                string            `json:"name"`
+	Encoding            string            `json:"encoding,omitempty"`
+	Layout              string            `json:"layout,omitempty"`
+	FilesSHA256         map[string]string `json:"files_sha256"`
+	OptionalFilesSHA256 map[string]string `json:"optional_files_sha256,omitempty"`
+	Actions             []journeyAction   `json:"actions"`
 }
 
 type journeyAction struct {
@@ -53,7 +54,8 @@ type journeyAction struct {
 	ExpectedMessages *[]uint16       `json:"expected_messages,omitempty"`
 	ExpectedScene    *uint16         `json:"expected_scene,omitempty"`
 	// Inventory assertions cover the listed item IDs; zero asserts absence.
-	ExpectedInventory map[uint16]int `json:"expected_inventory,omitempty"`
+	ExpectedInventory   map[uint16]int   `json:"expected_inventory,omitempty"`
+	ExpectedEventStates map[uint16]int16 `json:"expected_event_states,omitempty"`
 }
 
 type journeyChange struct {
@@ -95,44 +97,47 @@ type journeyBattleSummary struct {
 }
 
 type journeyReport struct {
-	ExecutionPolicy    journeyPolicy           `json:"execution_policy"`
-	TraceDetail        string                  `json:"trace_detail"`
-	Version            int                     `json:"format_version"`
-	Kind               string                  `json:"kind"`
-	Name               string                  `json:"name"`
-	RouteSHA256        string                  `json:"route_sha256"`
-	FullGameVerified   bool                    `json:"full_game_verified"`
-	Completed          bool                    `json:"completed"`
-	Error              string                  `json:"error,omitempty"`
-	Scope              string                  `json:"scope"`
-	Dataset            datasetSummary          `json:"dataset"`
-	Files              []fileEvidence          `json:"files"`
-	Initialization     palgame.Initialization  `json:"initialization"`
-	InitialSHA256      string                  `json:"initial_sha256"`
-	InitialIdleFrames  map[uint16]uint16       `json:"initial_idle_frames"`
-	TraceStateEncoding string                  `json:"trace_state_encoding"`
-	Actions            []journeyActionReport   `json:"actions"`
-	Final              palgame.SessionSnapshot `json:"final"`
+	ExecutionPolicy     journeyPolicy           `json:"execution_policy"`
+	TraceDetail         string                  `json:"trace_detail"`
+	Version             int                     `json:"format_version"`
+	Kind                string                  `json:"kind"`
+	Name                string                  `json:"name"`
+	RouteSHA256         string                  `json:"route_sha256"`
+	FullGameVerified    bool                    `json:"full_game_verified"`
+	Completed           bool                    `json:"completed"`
+	Error               string                  `json:"error,omitempty"`
+	Scope               string                  `json:"scope"`
+	Dataset             datasetSummary          `json:"dataset"`
+	Files               []fileEvidence          `json:"files"`
+	OptionalFilesSHA256 map[string]string       `json:"optional_files_sha256,omitempty"`
+	Initialization      palgame.Initialization  `json:"initialization"`
+	InitialSHA256       string                  `json:"initial_sha256"`
+	InitialIdleFrames   map[uint16]uint16       `json:"initial_idle_frames"`
+	TraceStateEncoding  string                  `json:"trace_state_encoding"`
+	Actions             []journeyActionReport   `json:"actions"`
+	Final               palgame.SessionSnapshot `json:"final"`
 }
 
 type journeyPolicy struct {
-	VM                 palflow.Options `json:"vm"`
-	RandomMode         string          `json:"random_mode"`
-	BattleMode         string          `json:"battle_mode"`
-	InitialRandomState uint64          `json:"initial_random_state"`
+	VM                    palflow.Options `json:"vm"`
+	RandomMode            string          `json:"random_mode"`
+	BattleMode            string          `json:"battle_mode"`
+	BattleSimplifications []string        `json:"battle_simplifications,omitempty"`
+	InitialRandomState    uint64          `json:"initial_random_state"`
 }
 
 func runJourney(args []string, out, errout io.Writer) error {
 	fs := flag.NewFlagSet("journey", flag.ContinueOnError)
 	fs.SetOutput(errout)
-	dir := fs.String("data", "", "同目录的四张数据表与 MGO/MAP/GOP.MKF")
+	dir := fs.String("data", "", "同目录的四张数据表与 MGO/MAP/GOP.MKF；可选 PAT/RNG/FBP.MKF")
 	routePath := fs.String("route", "", "连续动作 JSON 路线")
 	encoding := fs.String("encoding", "", "big5 或 gbk；也可由路线明确指定")
 	layout := fs.String("layout", "", "windows 或 dos；默认 windows，也可由路线指定")
 	dest := fs.String("out", "", "JSON 报告路径；默认 stdout")
-	initPath := fs.String("init-route", "", "生成固定七文件摘要及单个 enter 动作的 JSON 路线")
+	initPath := fs.String("init-route", "", "生成固定七文件、现有可选媒体摘要及单个 enter 动作的 JSON 路线")
 	maxSteps := fs.Int("max-steps", 10000, "每个动作的统一执行预算")
 	compact := fs.Bool("compact", false, "成功动作只保留输入、消息ID、工作量和前后摘要；失败保留完整轨迹")
+	battleMode := fs.String("battle-mode", "auto_attack", "auto_attack 原数值自动攻击；fast_verify 简化数值快速验证剧情")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -144,6 +149,9 @@ func runJourney(args []string, out, errout io.Writer) error {
 	}
 	if *maxSteps < 1 || *maxSteps > palflow.MaxAllowedSteps {
 		return errors.New("max-steps 须为1..100000")
+	}
+	if *battleMode != "auto_attack" && *battleMode != "fast_verify" {
+		return errors.New("battle-mode 须为 auto_attack 或 fast_verify")
 	}
 	if (*routePath == "") == (*initPath == "") {
 		return errors.New("journey 需要且只接受 -route 或 -init-route 之一")
@@ -172,9 +180,18 @@ func runJourney(args []string, out, errout io.Writer) error {
 	if err != nil {
 		return err
 	}
+	optionalPaths, err := journeyOptionalPaths(*dir)
+	if err != nil {
+		return err
+	}
 	protected := make([]string, 0, 8)
 	for _, name := range journeyFileNames {
 		protected = append(protected, paths[name])
+	}
+	for _, name := range journeyOptionalNames {
+		if path := optionalPaths[name]; path != "" {
+			protected = append(protected, path)
+		}
 	}
 	if *routePath != "" {
 		protected = append(protected, *routePath)
@@ -202,6 +219,10 @@ func runJourney(args []string, out, errout io.Writer) error {
 	if err != nil {
 		return err
 	}
+	media, err := journeyOpenMedia(optionalPaths)
+	if err != nil {
+		return err
+	}
 	files := make([]fileEvidence, 0, 7)
 	for _, f := range g.Files {
 		files = append(files, fileEvidence{Name: strings.ToUpper(f.Name), SHA256: f.SHA256, Size: f.Size})
@@ -213,12 +234,18 @@ func runJourney(args []string, out, errout io.Writer) error {
 	if *initPath != "" {
 		// Check the same bootstrap invariants as execution before producing a
 		// starter route. Merely producing this file does not execute OnEnter.
-		if _, err := palgame.NewSession(g, runtime, palgame.SessionOptions{Assets: assets, Maps: maps, RedactText: true, MaxSteps: *maxSteps}); err != nil {
+		if _, err := palgame.NewSession(g, runtime, palgame.SessionOptions{Assets: assets, Maps: maps, Palettes: media.palettes, RNG: media.rng, FBP: media.fbp, BattleMode: *battleMode, RedactText: true, MaxSteps: *maxSteps}); err != nil {
 			return err
 		}
 		spec = journeyRoute{Version: 1, Name: "new-game-journey", Encoding: selectedEncoding, Layout: selectedLayout, FilesSHA256: map[string]string{}, Actions: []journeyAction{{Type: "enter", Inputs: []palflow.Input{}}}}
 		for _, f := range files {
 			spec.FilesSHA256[f.Name] = f.SHA256
+		}
+		if len(media.files) > 0 {
+			spec.OptionalFilesSHA256 = map[string]string{}
+			for _, f := range media.files {
+				spec.OptionalFilesSHA256[f.Name] = f.SHA256
+			}
 		}
 		return writeReport(*initPath, spec, out)
 	}
@@ -227,7 +254,11 @@ func runJourney(args []string, out, errout io.Writer) error {
 			return fmt.Errorf("journey 路线文件摘要不匹配: %s", f.Name)
 		}
 	}
-	session, err := palgame.NewSession(g, runtime, palgame.SessionOptions{Assets: assets, Maps: maps, RedactText: true, MaxSteps: *maxSteps})
+	if err := journeyMatchOptional(spec.OptionalFilesSHA256, media.files); err != nil {
+		return err
+	}
+	files = append(files, media.files...)
+	session, err := palgame.NewSession(g, runtime, palgame.SessionOptions{Assets: assets, Maps: maps, Palettes: media.palettes, RNG: media.rng, FBP: media.fbp, BattleMode: *battleMode, RedactText: true, MaxSteps: *maxSteps})
 	if err != nil {
 		return err
 	}
@@ -261,9 +292,17 @@ func executeJourneyDetail(session *palgame.Session, spec journeyRoute, routeDige
 	before := session.Snapshot()
 	beforeJSON, _ := json.Marshal(before)
 	beforeDigest := journeyBytesDigest(beforeJSON)
-	report := journeyReport{Version: 1, Kind: "continuous_session_journey", Name: spec.Name, RouteSHA256: routeDigest, Dataset: dataset, Files: files, Initialization: initial, InitialSHA256: journeyDigest(before), InitialIdleFrames: before.IdleFrames, TraceStateEncoding: "Nested world and idle_frames are omitted. Initial imported world + initial_idle_frames + ordered action deltas reconstruct session snapshots; final includes the complete snapshot. Invocation digests identify prepared world and idle_frames.", Actions: []journeyActionReport{}, Scope: "One continuous new-game Session with imported local MGO/MAP/GOP resources. enter runs required scene OnEnter; move/interact use modeled frame order, collision and search; use_item executes the selected item's original script. Explicit trigger selects an event ID and does not establish spatial reachability. Battles use the Go numeric auto-attack policy and seeded model RNG. Original-runtime parity, a complete main story and all side quests are not verified."}
+	report := journeyReport{Version: 1, Kind: "continuous_session_journey", Name: spec.Name, RouteSHA256: routeDigest, Dataset: dataset, Files: files, Initialization: initial, InitialSHA256: journeyDigest(before), InitialIdleFrames: before.IdleFrames, TraceStateEncoding: "Nested world and idle_frames are omitted. Initial imported world + initial_idle_frames + ordered action deltas reconstruct session snapshots; final includes the complete snapshot. Invocation digests identify prepared world and idle_frames.", Actions: []journeyActionReport{}}
 	report.TraceDetail = "full"
+	if len(spec.OptionalFilesSHA256) > 0 {
+		report.OptionalFilesSHA256 = make(map[string]string, len(spec.OptionalFilesSHA256))
+		for name, digest := range spec.OptionalFilesSHA256 {
+			report.OptionalFilesSHA256[name] = digest
+		}
+	}
 	report.ExecutionPolicy = journeyPolicy{VM: session.ExecutionOptions(), RandomMode: before.World.RandomMode, BattleMode: before.World.BattleMode, InitialRandomState: before.World.BattleRandomState}
+	report.ExecutionPolicy.BattleSimplifications = palgame.BattlePolicyNotes(before.World.BattleMode)
+	report.Scope = "One continuous new-game Session using imported local resources. enter runs scene OnEnter; move/interact use modeled frame order, collision and search; use_item executes the original item script. Explicit trigger does not establish spatial reachability. Battles use the recorded Go numeric policy and seeded model RNG; battle_simplifications describes any verification-only changes. Original-runtime parity, a complete main story and all side quests are not verified."
 	if compact {
 		report.TraceDetail = "compact"
 		report.TraceStateEncoding = "Successful actions retain input, actual message IDs, work and before/after SHA-256. Full per-step trace and deltas are omitted by request; intermediate worlds require replay of the hash-bound route. Failed actions retain full available evidence. Final includes complete snapshot."
@@ -319,7 +358,7 @@ func executeJourneyDetail(session *palgame.Session, spec journeyRoute, routeDige
 		entry.MessageIDs = append([]uint16{}, messages...)
 		if entry.Trace != nil {
 			s := entry.Trace.State
-			entry.Work = s.ExecutedSteps + s.PlayerSubsteps + s.WorldTicks + s.AutoSubsteps + s.CombatWork
+			entry.Work = s.ExecutedSteps + s.PlayerSubsteps + s.WorldTicks + s.AutoSubsteps + s.CombatWork + s.MediaWork
 		}
 		if entry.Control != nil {
 			entry.Work = entry.Control.Work
@@ -439,6 +478,12 @@ func journeyExpect(action journeyAction, messages []uint16, state palgame.Sessio
 	for id, count := range action.ExpectedInventory {
 		if state.World.Inventory[id] != count {
 			return fmt.Errorf("物品 %d 数量 %d 与 expected_inventory %d 不一致；动作已执行并提交", id, state.World.Inventory[id], count)
+		}
+	}
+	for id, want := range action.ExpectedEventStates {
+		event, exists := state.World.Events[id]
+		if !exists || event.State != want {
+			return fmt.Errorf("事件 %d 状态与 expected_event_states %d 不一致；动作已执行并提交", id, want)
 		}
 	}
 	return nil
@@ -593,6 +638,12 @@ func journeyOutputPath(path string, protected []string) error {
 }
 
 func loadJourneyRoute(path string) (journeyRoute, string, error) {
+	return loadJourneyRouteMode(path, true)
+}
+
+// Only campaign continuations may omit the new-game first enter action. Every
+// action still runs against the existing Session and its scene-entry guards.
+func loadJourneyRouteMode(path string, requireNewGame bool) (journeyRoute, string, error) {
 	var spec journeyRoute
 	f, err := os.Open(path)
 	if err != nil {
@@ -603,6 +654,14 @@ func loadJourneyRoute(path string) (journeyRoute, string, error) {
 	if err != nil {
 		return spec, "", err
 	}
+	if len(data) > journeyRouteLimit {
+		return spec, "", errors.New("journey 路线超过1MiB")
+	}
+	return decodeJourneyRoute(data, requireNewGame)
+}
+
+func decodeJourneyRoute(data []byte, requireNewGame bool) (journeyRoute, string, error) {
+	var spec journeyRoute
 	if len(data) > journeyRouteLimit {
 		return spec, "", errors.New("journey 路线超过1MiB")
 	}
@@ -617,7 +676,7 @@ func loadJourneyRoute(path string) (journeyRoute, string, error) {
 	if err := d.Decode(&spec); err != nil {
 		return spec, "", err
 	}
-	if err := checkJourneyRoute(spec, data); err != nil {
+	if err := checkJourneyRouteMode(spec, data, requireNewGame); err != nil {
 		return spec, "", err
 	}
 	sum := sha256.Sum256(data)
@@ -686,6 +745,10 @@ func journeyJSONTokens(data []byte) error {
 }
 
 func checkJourneyRoute(spec journeyRoute, data []byte) error {
+	return checkJourneyRouteMode(spec, data, true)
+}
+
+func checkJourneyRouteMode(spec journeyRoute, data []byte, requireNewGame bool) error {
 	if spec.Version != 1 || strings.TrimSpace(spec.Name) == "" || len(spec.Name) > 256 {
 		return errors.New("journey 路线需要 version=1 及1..256字节非空 name")
 	}
@@ -705,10 +768,13 @@ func checkJourneyRoute(spec journeyRoute, data []byte) error {
 			return fmt.Errorf("journey 缺失或无效 SHA-256: %s", name)
 		}
 	}
+	if err := journeyCheckOptionalHashes(spec.OptionalFilesSHA256); err != nil {
+		return err
+	}
 	if len(spec.Actions) < 1 || len(spec.Actions) > journeyMaxActions {
 		return errors.New("journey actions 须有1..10000项")
 	}
-	if spec.Actions[0].Type != "enter" {
+	if requireNewGame && spec.Actions[0].Type != "enter" {
 		return errors.New("journey 必须从新游戏 enter 动作开始")
 	}
 	// Require exact spelling as well: Go's struct decoder otherwise accepts
@@ -717,7 +783,7 @@ func checkJourneyRoute(spec journeyRoute, data []byte) error {
 	if err := json.Unmarshal(data, &root); err != nil {
 		return err
 	}
-	if err := journeyKeys(root, "version", "name", "encoding", "layout", "files_sha256", "actions"); err != nil {
+	if err := journeyKeys(root, "version", "name", "encoding", "layout", "files_sha256", "optional_files_sha256", "actions"); err != nil {
 		return err
 	}
 	var rawActions []map[string]json.RawMessage
@@ -725,7 +791,7 @@ func checkJourneyRoute(spec journeyRoute, data []byte) error {
 		return err
 	}
 	for i, action := range spec.Actions {
-		if err := journeyKeys(rawActions[i], "type", "event", "direction", "item", "target_role", "inputs", "expected_messages", "expected_scene", "expected_inventory"); err != nil {
+		if err := journeyKeys(rawActions[i], "type", "event", "direction", "item", "target_role", "inputs", "expected_messages", "expected_scene", "expected_inventory", "expected_event_states"); err != nil {
 			return err
 		}
 		if action.Inputs == nil {
@@ -802,6 +868,18 @@ func checkJourneyRoute(spec journeyRoute, data []byte) error {
 				id, err := strconv.ParseUint(key, 10, 16)
 				if err != nil || id == 0 || strconv.FormatUint(id, 10) != key || count < 0 || count > 99 {
 					return errors.New("journey expected_inventory 需要规范的非零物品ID和0..99数量")
+				}
+			}
+		}
+		if raw, ok := rawActions[i]["expected_event_states"]; ok {
+			var states map[string]int16
+			if err := json.Unmarshal(raw, &states); err != nil {
+				return err
+			}
+			for key := range states {
+				id, err := strconv.ParseUint(key, 10, 16)
+				if err != nil || id == 0 || strconv.FormatUint(id, 10) != key {
+					return fmt.Errorf("journey expected_event_states 需要规范的非零事件ID: %q", key)
 				}
 			}
 		}

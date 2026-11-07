@@ -85,7 +85,16 @@ func (e *Engine) applyRewards(s *Snapshot, r *Report) error {
 			r.Limitations = appendUnique(r.Limitations, "role five has no imported level-up magic column")
 		}
 	}
-	for i := range s.Enemies {
+	for slot := 0; slot <= s.MaxEnemySlot; slot++ {
+		i := enemyIndexAtSlot(s, slot)
+		if i < 0 {
+			if _, err := e.runScript(s, ScriptRequest{Hook: "enemy battle end", Invoker: uint16(slot), Target: Target{Side: Enemy, Index: -1}}, r, nil); err != nil {
+				return err
+			}
+			continue
+		}
+		// Battle-end hooks are intentionally unfiltered: defeat clears the
+		// active object ID but leaves this continuation in the original slot.
 		x := &s.Enemies[i]
 		if _, err := e.runScript(s, ScriptRequest{Hook: "enemy battle end", ObjectID: x.ObjectID, Entry: x.BattleEnd, Invoker: uint16(x.Slot), Target: Target{Side: Enemy, Index: i}}, r, nil); err != nil {
 			return err

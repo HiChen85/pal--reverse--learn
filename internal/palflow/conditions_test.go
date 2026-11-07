@@ -213,12 +213,8 @@ func TestConditionsConfigurationAndSignedWorldWrites(t *testing.T) {
 	if state.World.ScreenWave != 65535 || state.World.WaveProgression != -2 {
 		t.Fatal("wave signed fields incorrect")
 	}
-	state, screen := conditionEvaluate(t, w, 0, ins(0x80, 1))
-	if !state.World.NightPalette || screen.Screen == nil || screen.Screen.Rendered {
-		t.Fatal("toggle lost palette or request evidence")
-	}
 	w.NightPalette = true
-	state, screen = conditionEvaluate(t, w, 0, ins(0x8b, 7))
+	state, screen := conditionEvaluate(t, w, 0, ins(0x8b, 7))
 	if state.World.Palette != 7 || !state.World.NightPalette || screen.Screen == nil {
 		t.Fatal("palette request incorrectly changed night flag")
 	}
@@ -400,7 +396,6 @@ func TestConditionsFailuresRollbackWorldFramesInputsAndEvidence(t *testing.T) {
 		{"unknown membership boundary", ins(0x81, 46, 0, 20), 10, nil, func(w *WorldState) { delete(w.Scenes, 4) }},
 		{"descending membership boundary", ins(0x83, 46, 0, 20), 10, nil, func(w *WorldState) { w.Scenes[4] = WorldScene{EventStart: 1} }},
 		{"unknown placement map", ins(0x84, 46, 1, 20), 10, nil, nil},
-		{"palette scene updates", ins(0x80, 0), 10, nil, nil},
 		{"current map reload", ins(0x99, 65535, 7), 10, nil, nil},
 		{"range partial update", ins(0x9a, 45, 47, 65535), 10, nil, nil},
 		{"range event zero", ins(0x9a, 0, 2, 1), 10, nil, nil},

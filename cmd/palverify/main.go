@@ -71,6 +71,7 @@ func help(w io.Writer) {
 palverify enter -data <目录> -encoding <big5|gbk> [-layout dos|windows] [-scene 1] [-mgo <MGO.MKF>] [-out reports/enter.json]
 palverify journey -data <目录> -encoding <big5|gbk> -layout <dos|windows> -route <连续路线.json> [-out reports/journey.json]
 palverify journey -data <目录> -encoding <big5|gbk> -layout <dos|windows> -init-route <新路线.json>
+palverify campaign -data <目录> -manifest <分段清单.json> -out-dir <新报告目录> [-battle-mode auto_attack|fast_verify]
 palverify inspect -data <目录> -encoding <big5|gbk> [-out reports/import.json]
 palverify audit   -data <目录> -encoding <big5|gbk> [-entry <脚本索引>] [-out reports/audit.json]
 palverify trace   -data <目录> -encoding <big5|gbk> -route <路线.json> [-include-text] [-out reports/trace.json]
@@ -92,6 +93,9 @@ func run(args []string, out, errout io.Writer) error {
 	mode := args[0]
 	if mode == "journey" {
 		return runJourney(args[1:], out, errout)
+	}
+	if mode == "campaign" {
+		return runCampaign(args[1:], out, errout)
 	}
 	if mode == "enter" {
 		return runEntry(args[1:], out, errout)

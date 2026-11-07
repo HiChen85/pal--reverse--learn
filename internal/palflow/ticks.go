@@ -13,6 +13,12 @@ func ticksOpcodeName(op uint16) string {
 // event order and PAL_RunAutoScript's one-instruction-per-tick rules.
 // Rendering, elapsed wall time, and dialog clearing are recorded, not performed.
 func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, inputs []Input) (bool, error) {
+	return r.evaluateTicksCore(state, step, inst, inputs, true)
+}
+
+// Internal movement/camera callers issue MakeScene at their own reference
+// call site. They reuse this pure-update path without drawing twice.
+func (r *Runner) evaluateTicksCore(state *State, step *TraceStep, inst Instruction, inputs []Input, present bool) (bool, error) {
 	if inst.Opcode != 0x0009 {
 		return false, nil
 	}
@@ -48,7 +54,7 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 	// Subtract each component rather than adding caller-supplied counters, so
 	// malformed extreme counters cannot overflow the combined budget check.
 	remaining := r.options.MaxSteps
-	for _, used := range []int{state.ExecutedSteps, state.PlayerSubsteps, state.WorldTicks, state.AutoSubsteps, state.CombatWork, int(ticks), 1} {
+	for _, used := range []int{state.ExecutedSteps, state.PlayerSubsteps, state.WorldTicks, state.AutoSubsteps, state.CombatWork, state.MediaWork, int(ticks), 1} {
 		if used < 0 || used > remaining {
 			return true, fmt.Errorf("frame wait of %d ticks exceeds the combined instruction, player substep, and world tick budget of %d", ticks, r.options.MaxSteps)
 		}
@@ -62,6 +68,18 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 	working.WorldTicks += int(ticks)
 	scheduler := autoScheduler{runner: r, state: &working, inputs: inputs, remaining: remaining, reserved: 1}
 	var updates []WorldUpdateRecord
+	screenUpdates := 0
+	presentScene := func() error {
+		if !present {
+			return nil
+		}
+		count, err := r.cameraPresent(working.World)
+		if err != nil {
+			return fmt.Errorf("frame wait scene redraw: %w", err)
+		}
+		screenUpdates += count
+		return nil
+	}
 	for tick := 1; tick <= int(ticks); tick++ {
 		if inst.Operands[2] != 0 {
 			if err := updatePartyGestures(r.source, working.World, false); err != nil {
@@ -70,11 +88,18 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 		}
 		if inst.Operands[1] != 0 {
 			fromAuto, beforeFrame := len(scheduler.steps), working.World.FrameNum
-			calls, err := r.updateTriggeredTick(&working, &scheduler, inputs, uint16(tick))
+			beforeScreens := screenUpdates
+			touchScreenUpdates := 0
+			calls, err := r.updateTriggeredTick(&working, &scheduler, inputs, uint16(tick), &touchScreenUpdates)
 			if err != nil {
 				return true, fmt.Errorf("trigger-enabled frame wait at PC %04x, tick %d: %w", frame.PC, tick, err)
 			}
-			updates = append(updates, WorldUpdateRecord{Tick: uint16(tick), BeforeFrame: beforeFrame, AfterFrame: working.World.FrameNum, TriggerSteps: calls, AutoSteps: append([]AutoStep(nil), scheduler.steps[fromAuto:]...)})
+			screenUpdates += touchScreenUpdates
+			updates = append(updates, WorldUpdateRecord{Tick: uint16(tick), BeforeFrame: beforeFrame, AfterFrame: working.World.FrameNum, TriggerSteps: calls, AutoSteps: append([]AutoStep(nil), scheduler.steps[fromAuto:]...), ScreenUpdates: touchScreenUpdates})
+			if err := presentScene(); err != nil {
+				return true, err
+			}
+			updates[len(updates)-1].ScreenUpdates = screenUpdates - beforeScreens
 			continue
 		}
 		// Auto scripts may replace another event's entry, so candidates include
@@ -103,15 +128,21 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 		if !active {
 			// Standing gestures change the static step phase on every tick.
 			// Only gesture-free waits may fold their remaining empty updates.
-			if inst.Operands[2] == 0 {
+			if inst.Operands[2] == 0 && !present {
 				advanceWorldCounters(working.World, uint16(int(ticks)-tick+1))
 				break
 			}
 			advanceWorldCounters(working.World, 1)
+			if err := presentScene(); err != nil {
+				return true, err
+			}
 			continue
 		}
 		if !interrupted {
 			advanceWorldCounters(working.World, 1)
+		}
+		if err := presentScene(); err != nil {
+			return true, err
 		}
 	}
 	working.Frames[frameIndex] = frame
@@ -123,7 +154,7 @@ func (r *Runner) evaluateTicks(state *State, step *TraceStep, inst Instruction, 
 		step.AutoSteps = nil
 		step.WorldUpdates = updates
 	}
-	step.Screen = &ScreenRecord{Kind: "frame_wait", ClearDialogRequested: true, Rendered: false}
+	step.Screen = &ScreenRecord{Kind: "frame_wait", ClearDialogRequested: true, Rendered: false, ScreenUpdates: screenUpdates}
 	step.Effect = fmt.Sprintf("request %d world ticks with %d bounded auto instructions; standing gestures=%t, triggers enabled=%t; request dialog clear and redraw", ticks, len(scheduler.steps), inst.Operands[2] != 0, inst.Operands[1] != 0)
 	return true, nil
 }

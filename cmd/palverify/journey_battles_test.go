@@ -17,3 +17,11 @@ func TestJourneyBattleSummariesOrderAndDistinguishSuppliedOutcomes(t *testing.T)
 		t.Fatal("battle summary lost source, nesting or control execution order", found)
 	}
 }
+
+func TestJourneyBattleSummariesMarkFastVerification(t *testing.T) {
+	r := palflow.Report{Trace: []palflow.TraceStep{{Opcode: 7, Operands: [3]uint16{15}, Combat: &palflow.CombatExecution{Policy: "fast_verify", RawResult: 3, Reports: make([]palcombat.Report, 1), Work: 131}}}}
+	found := journeyBattles(&r, nil)
+	if len(found) != 1 || found[0].Mode != "fast_verify" || found[0].EnemyTeam != 15 || found[0].RawResult != 3 || found[0].Rounds != 1 || found[0].Work != 131 {
+		t.Fatal("compact report hid the simplified numeric policy", found)
+	}
+}

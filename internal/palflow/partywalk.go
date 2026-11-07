@@ -18,6 +18,7 @@ type PartyWalkStep struct {
 	BeforeWorldFrame uint32     `json:"before_world_frame"`
 	AfterWorldFrame  uint32     `json:"after_world_frame"`
 	AutoSteps        []AutoStep `json:"auto_steps,omitempty"`
+	ScreenUpdates    int        `json:"screen_updates"`
 }
 
 type PartyWalkRecord struct {
@@ -60,7 +61,7 @@ func (r *Runner) evaluatePartyWalk(state *State, step *TraceStep, inst Instructi
 		return true, fmt.Errorf("party walk requires a positive execution budget")
 	}
 	remaining := r.options.MaxSteps
-	for _, used := range []int{state.ExecutedSteps, state.PlayerSubsteps, state.WorldTicks, state.AutoSubsteps, state.CombatWork, 1} {
+	for _, used := range []int{state.ExecutedSteps, state.PlayerSubsteps, state.WorldTicks, state.AutoSubsteps, state.CombatWork, state.MediaWork, 1} {
 		if used < 0 || used > remaining {
 			return true, fmt.Errorf("party walk exceeds the combined execution budget")
 		}
@@ -140,7 +141,7 @@ func (r *Runner) evaluatePartyWalk(state *State, step *TraceStep, inst Instructi
 		}
 		evidence.TrailHead = w.Trail[0]
 		tick := TraceStep{}
-		if _, err := r.evaluateTicks(&working, &tick, Instruction{Opcode: 9, Operands: [3]uint16{1}}, inputs); err != nil {
+		if _, err := r.evaluateTicksCore(&working, &tick, Instruction{Opcode: 9, Operands: [3]uint16{1}}, inputs, false); err != nil {
 			return true, fmt.Errorf("party walk movement %d: %w", evidence.Sequence, err)
 		}
 		// The synthetic wait is an internal update, not an instruction in the
@@ -149,6 +150,9 @@ func (r *Runner) evaluatePartyWalk(state *State, step *TraceStep, inst Instructi
 		w = working.World
 		if w.SceneChanged || w.SceneLoadPending || !sameParty(w, state.World) {
 			return true, fmt.Errorf("party walk movement %d changed scene or party; continuation is not modeled", evidence.Sequence)
+		}
+		if evidence.ScreenUpdates, err = r.cameraPresent(w); err != nil {
+			return true, fmt.Errorf("party walk movement %d redraw: %w", evidence.Sequence, err)
 		}
 		evidence.AfterWorldFrame = w.FrameNum
 		evidence.AutoSteps = tick.AutoSteps

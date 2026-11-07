@@ -77,7 +77,7 @@ func (r *Runner) evaluateShop(s *State, step *TraceStep, inst Instruction, input
 	}
 	for {
 		remaining := r.options.MaxSteps
-		for _, used := range []int{working.ExecutedSteps, working.PlayerSubsteps, working.WorldTicks, working.AutoSubsteps, working.CombatWork, 1} {
+		for _, used := range []int{working.ExecutedSteps, working.PlayerSubsteps, working.WorldTicks, working.AutoSubsteps, working.CombatWork, working.MediaWork, 1} {
 			if used < 0 || used > remaining {
 				return true, fmt.Errorf("shop exceeds combined execution budget")
 			}

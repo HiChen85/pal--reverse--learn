@@ -3,18 +3,19 @@ package palflow
 import "fmt"
 
 type WorldUpdateRecord struct {
-	Tick         uint16      `json:"tick"`
-	BeforeFrame  uint32      `json:"before_frame"`
-	AfterFrame   uint32      `json:"after_frame"`
-	TriggerSteps []TraceStep `json:"trigger_steps,omitempty"`
-	AutoSteps    []AutoStep  `json:"auto_steps,omitempty"`
+	ScreenUpdates int         `json:"screen_updates"`
+	Tick          uint16      `json:"tick"`
+	BeforeFrame   uint32      `json:"before_frame"`
+	AfterFrame    uint32      `json:"after_frame"`
+	TriggerSteps  []TraceStep `json:"trigger_steps,omitempty"`
+	AutoSteps     []AutoStep  `json:"auto_steps,omitempty"`
 }
 
 // updateTriggeredTick is the trigger-enabled PAL_GameUpdate order used by
 // opcode 9. The caller owns a detached state and has reserved every wait tick
 // plus the enclosing instruction. Nested triggers share its input, depth,
 // dialogue and work budgets; a scene change returns before autos/frame counters.
-func (r *Runner) updateTriggeredTick(s *State, scheduler *autoScheduler, inputs []Input, tick uint16) ([]TraceStep, error) {
+func (r *Runner) updateTriggeredTick(s *State, scheduler *autoScheduler, inputs []Input, tick uint16, screenUpdates *int) ([]TraceStep, error) {
 	var calls []TraceStep
 	invoke := func(entry, event uint16) error {
 		trace, err := r.runTriggerInline(s, entry, event, inputs, scheduler.reserved)
@@ -92,6 +93,11 @@ func (r *Runner) updateTriggeredTick(s *State, scheduler *autoScheduler, inputs 
 			if err := updatePartyGestures(r.source, w, false); err != nil {
 				return nil, err
 			}
+			updates, err := r.cameraPresent(w)
+			if err != nil {
+				return nil, fmt.Errorf("touch event %d redraw: %w", id, err)
+			}
+			*screenUpdates += updates
 		}
 		if err := invoke(e.Trigger, id); err != nil {
 			return nil, err

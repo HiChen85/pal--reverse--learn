@@ -29,6 +29,10 @@ type originalData struct {
 	assets                                        *palasset.SpriteCatalog
 	maps                                          *palasset.MapCatalog
 	palettes                                      *palasset.PaletteCatalog
+	rng                                           *palasset.RNGCatalog
+	fbp                                           *palasset.FBPCatalog
+	mediaIdentities                               []paldata.FileInfo
+	mediaError                                    string
 	mapIdentities                                 []paldata.FileInfo
 	paletteIdentity                               *paldata.FileInfo
 	mapError, paletteError, viewportError         string
@@ -38,10 +42,12 @@ type originalData struct {
 	runtimeError                                  string
 	session                                       *palgame.Session
 	useSession, assumeEntered                     bool
+	fastVerify                                    bool
 	checkpoint                                    originalCheckpoint
 	scene, event                                  string
 	item, itemRole                                string
 	inputsJSON, exportPath                        string
+	savePath, saveResult                          string
 	lastEvent                                     float64
 	maxSteps                                      float64
 	enterPC                                       map[int]uint16
@@ -53,6 +59,7 @@ type originalCheckpoint struct {
 	AssumeSceneEntered bool   `json:"assume_scene_entered"`
 }
 type originalActionIntent struct {
+	Path        string          `json:"path,omitempty"`
 	Kind        string          `json:"kind"`
 	SceneNumber int             `json:"scene_number"`
 	EventID     uint16          `json:"event_id"`
@@ -82,6 +89,7 @@ type originalEvidence struct {
 	MGOIdentity       *paldata.FileInfo  `json:"mgo_identity,omitempty"`
 	MapIdentities     []paldata.FileInfo `json:"map_identities,omitempty"`
 	PaletteIdentity   *paldata.FileInfo  `json:"palette_identity,omitempty"`
+	MediaIdentities   []paldata.FileInfo `json:"media_identities,omitempty"`
 	SpriteDecodeLimit int                `json:"sprite_decode_limit"`
 	SchemaVersion     int                `json:"schema_version"`
 	Scope             string             `json:"scope"`
@@ -92,7 +100,7 @@ type originalEvidence struct {
 }
 
 func newOriginalData() *originalData {
-	return &originalData{directory: filepath.Join("assets", "original"), encoding: "big5", layout: "dos", inputsJSON: "[]", exportPath: "original.paltrace.json", maxSteps: 10000}
+	return &originalData{directory: filepath.Join("assets", "original"), encoding: "big5", layout: "dos", inputsJSON: "[]", exportPath: "original.paltrace.json", savePath: "original.palsave.json", maxSteps: 10000}
 }
 func (o *originalData) load() error {
 	g, err := paldata.Load(o.directory, paldata.Options{Encoding: o.encoding, Layout: o.layout})
@@ -108,6 +116,7 @@ func (o *originalData) load() error {
 	o.enterPC = map[int]uint16{}
 	o.triggerPC = map[int]uint16{}
 	o.history = nil
+	o.saveResult = ""
 	o.lastEvent = 0
 	o.inputsJSON = "[]"
 	for i, s := range g.Scenes {
@@ -130,6 +139,11 @@ func (o *originalData) load() error {
 	o.paletteError = ""
 	if err != nil {
 		o.paletteError = err.Error()
+	}
+	o.rng, o.fbp, o.mediaIdentities, err = loadOriginalMedia(o.directory)
+	o.mediaError = ""
+	if err != nil {
+		o.mediaError = err.Error()
 	}
 	o.viewport, o.viewportError = nil, ""
 	o.runtime = nil
@@ -179,7 +193,7 @@ func (o *originalData) resetSession() error {
 	if o.maxSteps < 1 || o.maxSteps > palflow.MaxAllowedSteps || o.maxSteps != float64(int(o.maxSteps)) {
 		return errors.New("会话工作量上限必须是允许范围内的整数")
 	}
-	next, err := palgame.NewSession(o.game, o.runtime, palgame.SessionOptions{Assets: o.assets, Maps: o.maps, Scene: uint16(index + 1), AssumeSceneEntered: o.assumeEntered, MaxSteps: int(o.maxSteps)})
+	next, err := palgame.NewSession(o.game, o.runtime, palgame.SessionOptions{Assets: o.assets, Maps: o.maps, Palettes: o.palettes, RNG: o.rng, FBP: o.fbp, BattleMode: o.selectedBattleMode(), Scene: uint16(index + 1), AssumeSceneEntered: o.assumeEntered, MaxSteps: int(o.maxSteps)})
 	if err != nil {
 		return err
 	}
@@ -364,7 +378,7 @@ func (o *originalData) run(kind string) error {
 		}
 	}
 	options := originalDiagnosticOptions()
-	runner, err := palflow.New(palgame.Source{Game: o.game, Runtime: o.runtime, Assets: o.assets, Maps: o.maps}, options)
+	runner, err := palflow.New(palgame.Source{Game: o.game, Runtime: o.runtime, Assets: o.assets, Maps: o.maps, Palettes: o.palettes, RNG: o.rng, FBP: o.fbp}, options)
 	if err != nil {
 		return err
 	}
@@ -435,7 +449,7 @@ func (o *originalData) export() error {
 	if err := o.validateExportPath(); err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(originalEvidence{MGOIdentity: o.mgoIdentity, MapIdentities: o.mapIdentities, PaletteIdentity: o.paletteIdentity, SpriteDecodeLimit: originalSpriteDecodeLimit, SchemaVersion: 2, Scope: "bounded script or spatial control action; no full-game verification", Encoding: o.loadedEncoding, Layout: o.loadedLayout, Files: o.game.Files, Invocation: o.history[len(o.history)-1]}, "", "  ")
+	data, err := json.MarshalIndent(originalEvidence{MGOIdentity: o.mgoIdentity, MapIdentities: o.mapIdentities, PaletteIdentity: o.paletteIdentity, MediaIdentities: o.mediaIdentities, SpriteDecodeLimit: originalSpriteDecodeLimit, SchemaVersion: 2, Scope: "bounded script or spatial control action; no full-game verification", Encoding: o.loadedEncoding, Layout: o.loadedLayout, Files: o.game.Files, Invocation: o.history[len(o.history)-1]}, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -479,6 +493,29 @@ func (o *originalData) validateExportPath() error {
 	sourceFiles = append(sourceFiles, o.mapIdentities...)
 	if o.paletteIdentity != nil {
 		sourceFiles = append(sourceFiles, *o.paletteIdentity)
+	}
+	sourceFiles = append(sourceFiles, o.mediaIdentities...)
+	protectedPaths, err := o.protectedOriginalResourcePaths()
+	if err != nil {
+		return err
+	}
+	for _, path := range protectedPaths {
+		source, err := filepath.Abs(path)
+		if err != nil {
+			return err
+		}
+		if source == output {
+			return errors.New("不能覆盖原版资源文件")
+		}
+		if outputInfo != nil {
+			info, err := os.Stat(source)
+			if err == nil && os.SameFile(outputInfo, info) {
+				return errors.New("导出路径是原版资源文件的别名，不能覆盖")
+			}
+			if err != nil && !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+		}
 	}
 	for _, file := range sourceFiles {
 		source, err := filepath.Abs(filepath.Join(o.loadedDirectory, file.Name))
@@ -540,6 +577,12 @@ func (a *workbench) originalView(c *ui.Context) {
 	} else {
 		ui.Text(c, fmt.Sprintf("%s · %d 字节 · SHA256 %s", o.paletteIdentity.Name, o.paletteIdentity.Size, o.paletteIdentity.SHA256)).FontSize(12).TextColor(t.TextMuted)
 	}
+	for _, file := range o.mediaIdentities {
+		ui.Text(c, fmt.Sprintf("%s · %d 字节 · SHA256 %s", file.Name, file.Size, file.SHA256)).FontSize(12).TextColor(t.TextMuted)
+	}
+	if o.mediaError != "" {
+		ui.Text(c, "媒体目录读取失败："+o.mediaError).FontSize(12).TextColor(t.Warning)
+	}
 	if o.runtimeError != "" {
 		ui.Text(c, "运行表不可用，保留单次诊断模式："+o.runtimeError).FontSize(12).TextColor(t.Warning)
 	}
@@ -551,6 +594,8 @@ func (a *workbench) originalView(c *ui.Context) {
 			a.report(o.resetSession(), "已重置逻辑检查点；没有验证原游戏可达性")
 		}
 	})
+	a.originalBattlePolicyView(c)
+	a.originalSaveView(c)
 	ui.Text(c, "会话只提交完整、输入精确的动作。地图操作执行碰撞、调查和自动更新；事件 ID 触发属于诊断调用。改变场景选择后须显式重置，不会传送当前会话。").FontSize(12).TextColor(t.TextMuted)
 	if o.useSession && o.session != nil {
 		snapshot := o.session.Snapshot()
@@ -634,7 +679,9 @@ func (a *workbench) originalView(c *ui.Context) {
 	if record.Mode == "session" || record.Mode == "control" {
 		ui.Text(c, fmt.Sprintf("逻辑会话状态已提交: %t", record.SessionCommitted)).FontSize(12)
 	}
-	if record.Control != nil {
+	if record.Mode == "session_file" {
+		ui.Text(c, fmt.Sprintf("会话文件操作 %s · 路径 %s · 已替换活动会话: %t", record.Kind, record.ActionIntent.Path, record.SessionCommitted)).FontSize(12)
+	} else if record.Control != nil {
 		a.originalControlReportView(c, record)
 	} else {
 		entry := "未调用"

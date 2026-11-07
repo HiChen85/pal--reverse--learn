@@ -34,7 +34,7 @@ type scriptRandom struct {
 func (s scriptRandom) Intn(n int) (int, error) { return s.e.draw(n, s.reason, s.report) }
 
 func (e *Engine) runScript(s *Snapshot, request ScriptRequest, r *Report, next *uint16) (bool, error) {
-	if request.Entry == 0 {
+	if request.Entry == 0 && e.transaction == nil {
 		return true, nil
 	}
 	if err := e.checkScript(request.Entry, request.Hook, request.ObjectID); err != nil {
@@ -44,7 +44,19 @@ func (e *Engine) runScript(s *Snapshot, request ScriptRequest, r *Report, next *
 		return false, fmt.Errorf("palcombat: no active script transaction")
 	}
 	party, enemies := &s.Party[0], &s.Enemies[0]
+	// Capture an enemy continuation by index before a typed topology result can
+	// append and move the backing array. Local/object continuation pointers are
+	// independent of that array and retain their existing path.
+	nextEnemy, nextWord := -1, 0
+	for i := range s.Enemies {
+		for word, p := range []*uint16{&s.Enemies[i].TurnStart, &s.Enemies[i].BattleEnd, &s.Enemies[i].Ready} {
+			if next != nil && next == p {
+				nextEnemy, nextWord = i, word
+			}
+		}
+	}
 	outcome, round, started, team := s.Outcome, s.Round, s.Started, s.TeamID
+	maxEnemySlot := s.MaxEnemySlot
 	rewards := s.Earned
 	rewards.ByRole = cloneMap(rewards.ByRole)
 	entries := cloneMap(s.ScriptEntries)
@@ -53,12 +65,16 @@ func (e *Engine) runScript(s *Snapshot, request ScriptRequest, r *Report, next *
 	ownedEnemies := make([]struct {
 		rewarded         bool
 		turn, end, ready uint16
+		object           uint16
+		slot             int
 	}, len(s.Enemies))
 	for i, x := range s.Enemies {
 		ownedEnemies[i] = struct {
 			rewarded         bool
 			turn, end, ready uint16
-		}{x.Rewarded, x.TurnStart, x.BattleEnd, x.Ready}
+			object           uint16
+			slot             int
+		}{x.Rewarded, x.TurnStart, x.BattleEnd, x.Ready, x.ObjectID, x.Slot}
 	}
 	result, err := e.transaction.Run(request, s, scriptRandom{e, r, "script." + request.Hook})
 	r.Scripts = append(r.Scripts, result.Trace...)
@@ -76,11 +92,11 @@ func (e *Engine) runScript(s *Snapshot, request ScriptRequest, r *Report, next *
 	}
 	for i, x := range s.Enemies {
 		old := ownedEnemies[i]
-		if x.Rewarded != old.rewarded || x.TurnStart != old.turn || x.BattleEnd != old.end || x.Ready != old.ready {
+		if x.Rewarded != old.rewarded || x.TurnStart != old.turn || x.BattleEnd != old.end || x.Ready != old.ready || x.ObjectID != old.object || x.Slot != old.slot {
 			return false, &UnsupportedError{Feature: "script modifies engine-owned enemy fields", ObjectID: request.ObjectID, Entry: request.Entry}
 		}
 	}
-	if s.Outcome != outcome || s.Round != round || s.Started != started || s.TeamID != team || s.Earned.Experience != rewards.Experience || s.Earned.Cash != rewards.Cash || s.Earned.Applied != rewards.Applied || !maps.Equal(s.Earned.ByRole, rewards.ByRole) || !maps.Equal(s.ScriptEntries, entries) || !maps.Equal(s.ObjectChanges, objects) || !maps.Equal(s.MagicBaseDamage, magics) {
+	if s.Outcome != outcome || s.Round != round || s.Started != started || s.TeamID != team || s.MaxEnemySlot != maxEnemySlot || s.Earned.Experience != rewards.Experience || s.Earned.Cash != rewards.Cash || s.Earned.Applied != rewards.Applied || !maps.Equal(s.Earned.ByRole, rewards.ByRole) || !maps.Equal(s.ScriptEntries, entries) || !maps.Equal(s.ObjectChanges, objects) || !maps.Equal(s.MagicBaseDamage, magics) {
 		return false, &UnsupportedError{Feature: "script modifies engine-owned round fields", ObjectID: request.ObjectID, Entry: request.Entry}
 	}
 	if result.NextEntry != 0 && int(result.NextEntry) >= len(e.scripts) {
@@ -92,8 +108,16 @@ func (e *Engine) runScript(s *Snapshot, request ScriptRequest, r *Report, next *
 	if err = e.applyScriptResult(s, result); err != nil {
 		return false, err
 	}
+	if err = e.validateSnapshot(*s); err != nil {
+		return false, err
+	}
 	if next != nil {
-		*next = result.NextEntry
+		if nextEnemy >= 0 {
+			x := &s.Enemies[nextEnemy]
+			*[]*uint16{&x.TurnStart, &x.BattleEnd, &x.Ready}[nextWord] = result.NextEntry
+		} else {
+			*next = result.NextEntry
+		}
 	}
 	return result.Success, nil
 }
@@ -131,9 +155,13 @@ func (e *Engine) runObjectScript(s *Snapshot, object uint16, word int, hook stri
 }
 
 func (e *Engine) turnStart(s *Snapshot, r *Report) error {
-	for i := range s.Enemies {
+	for slot := 0; slot <= s.MaxEnemySlot; slot++ {
+		i := enemyIndexAtSlot(s, slot)
+		if i < 0 {
+			continue
+		}
 		x := &s.Enemies[i]
-		if x.HP <= 0 {
+		if !enemyPresent(*x) || x.HP <= 0 {
 			continue
 		}
 		if _, err := e.runScript(s, ScriptRequest{Hook: "enemy turn start", ObjectID: x.ObjectID, Entry: x.TurnStart, Invoker: uint16(x.Slot), Target: Target{Side: Enemy, Index: i}}, r, &x.TurnStart); err != nil {
@@ -146,10 +174,33 @@ func (e *Engine) turnStart(s *Snapshot, r *Report) error {
 	return nil
 }
 
-// A script may modify combat numbers, but summoning, replacing fighters and
-// granting outcomes require an explicit future extension of this engine.
+// PAL_BattleMain's initial pass invokes every fixed slot, including empty
+// slots and zero entries. Later classic turn-start passes filter empty slots.
+// Zero-entry callbacks still update trigger context in a connected script VM.
+func (e *Engine) preBattle(s *Snapshot, r *Report) error {
+	for slot := 0; slot <= s.MaxEnemySlot; slot++ {
+		i := enemyIndexAtSlot(s, slot)
+		if i < 0 {
+			if _, err := e.runScript(s, ScriptRequest{Hook: "enemy turn start", Invoker: uint16(slot), Target: Target{Side: Enemy, Index: -1}}, r, nil); err != nil {
+				return err
+			}
+		} else {
+			x := &s.Enemies[i]
+			if _, err := e.runScript(s, ScriptRequest{Hook: "enemy turn start", ObjectID: x.ObjectID, Entry: x.TurnStart, Invoker: uint16(slot), Target: Target{Side: Enemy, Index: i}}, r, &x.TurnStart); err != nil {
+				return err
+			}
+		}
+		if s.Outcome != Ongoing {
+			break
+		}
+	}
+	return nil
+}
+
+// Party identities stay fixed. Enemy identities change only through the typed
+// result path; runScript separately rejects direct identity/slice mutations.
 func (e *Engine) validateSnapshot(s Snapshot) error {
-	if len(s.Party) != len(e.state.Party) || len(s.Enemies) != len(e.state.Enemies) || s.TeamID != e.state.TeamID {
+	if len(s.Party) != len(e.state.Party) || len(s.Enemies) < 1 || len(s.Enemies) > 5 || s.TeamID != e.state.TeamID || s.MaxEnemySlot < 0 || s.MaxEnemySlot >= 5 {
 		return &UnsupportedError{Feature: "script changes fighter topology"}
 	}
 	for i, p := range s.Party {
@@ -157,10 +208,12 @@ func (e *Engine) validateSnapshot(s Snapshot) error {
 			return fmt.Errorf("palcombat: invalid player snapshot at slot %d", i)
 		}
 	}
-	for i, x := range s.Enemies {
-		if x.ObjectID != e.state.Enemies[i].ObjectID || x.Slot != e.state.Enemies[i].Slot || x.HP < 0 || x.HP > 65535 {
+	seen := [5]bool{}
+	for _, x := range s.Enemies {
+		if x.Slot < 0 || x.Slot >= 5 || seen[x.Slot] || int(x.ObjectID) >= len(e.objects) || x.HP < 0 || x.HP > 65535 || (!x.Rewarded && x.ObjectID != 0 && x.Slot > s.MaxEnemySlot) {
 			return &UnsupportedError{Feature: "script changes enemy identity or signed HP", ObjectID: x.ObjectID}
 		}
+		seen[x.Slot] = true
 	}
 	for id, n := range s.Inventory {
 		if id == 0 || int(id) >= len(e.objects) || n > 99 {

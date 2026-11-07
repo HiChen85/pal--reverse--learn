@@ -58,6 +58,8 @@ type Frame struct {
 	EventID   uint16 `json:"event_id"`
 }
 type State struct {
+	DialogPlayingRNG bool               `json:"dialog_playing_rng"`
+	MediaWork        int                `json:"media_work"`
 	LastInlineReturn uint16             `json:"last_inline_return"`
 	CombatWork       int                `json:"combat_work"`
 	Random           ScriptRandomSource `json:"-"`
@@ -100,6 +102,7 @@ type AudioRecord struct {
 	Executed          bool    `json:"executed"`
 }
 type ScreenRecord struct {
+	ScreenUpdates              int    `json:"screen_updates"`
 	DelayMilliseconds          uint32 `json:"delay_milliseconds,omitempty"`
 	Delay                      uint16 `json:"delay,omitempty"`
 	Palette                    uint16 `json:"palette,omitempty"`
@@ -110,30 +113,34 @@ type ScreenRecord struct {
 	Rendered                   bool   `json:"rendered"`
 }
 type TraceStep struct {
-	Shop           *ShopRecord         `json:"shop,omitempty"`
-	WorldUpdates   []WorldUpdateRecord `json:"world_updates,omitempty"`
-	Combat         *CombatExecution    `json:"combat,omitempty"`
-	RandomInputs   []InputUse          `json:"random_inputs,omitempty"`
-	Children       []TraceStep         `json:"children,omitempty"`
-	PartyWalk      *PartyWalkRecord    `json:"party_walk,omitempty"`
-	AutoSteps      []AutoStep          `json:"auto_steps,omitempty"`
-	Resources      []SpriteResource    `json:"resources,omitempty"`
-	Ticks          uint16              `json:"ticks,omitempty"`
-	PlayerSubsteps []PlayerSubstep     `json:"player_substeps,omitempty"`
-	Audio          *AudioRecord        `json:"audio,omitempty"`
-	Screen         *ScreenRecord       `json:"screen,omitempty"`
-	Sequence       int                 `json:"sequence"`
-	PC             uint16              `json:"pc"`
-	Opcode         uint16              `json:"opcode"`
-	Operands       [3]uint16           `json:"operands"`
-	EventID        uint16              `json:"event_id"`
-	Depth          int                 `json:"depth"`
-	Effect         string              `json:"effect"`
-	NextPC         uint16              `json:"next_pc"`
-	Input          *InputUse           `json:"input,omitempty"`
-	Message        *DisplayedMessage   `json:"message,omitempty"`
-	Dialog         *DialogRecord       `json:"dialog,omitempty"`
-	ReturnedEntry  *uint16             `json:"returned_entry,omitempty"`
+	PaletteTransition *PaletteTransitionRecord `json:"palette_transition,omitempty"`
+	Media             *MediaRecord             `json:"media,omitempty"`
+	Camera            *CameraRecord            `json:"camera,omitempty"`
+	SceneFade         *SceneFadeRecord         `json:"scene_fade,omitempty"`
+	Shop              *ShopRecord              `json:"shop,omitempty"`
+	WorldUpdates      []WorldUpdateRecord      `json:"world_updates,omitempty"`
+	Combat            *CombatExecution         `json:"combat,omitempty"`
+	RandomInputs      []InputUse               `json:"random_inputs,omitempty"`
+	Children          []TraceStep              `json:"children,omitempty"`
+	PartyWalk         *PartyWalkRecord         `json:"party_walk,omitempty"`
+	AutoSteps         []AutoStep               `json:"auto_steps,omitempty"`
+	Resources         []SpriteResource         `json:"resources,omitempty"`
+	Ticks             uint16                   `json:"ticks,omitempty"`
+	PlayerSubsteps    []PlayerSubstep          `json:"player_substeps,omitempty"`
+	Audio             *AudioRecord             `json:"audio,omitempty"`
+	Screen            *ScreenRecord            `json:"screen,omitempty"`
+	Sequence          int                      `json:"sequence"`
+	PC                uint16                   `json:"pc"`
+	Opcode            uint16                   `json:"opcode"`
+	Operands          [3]uint16                `json:"operands"`
+	EventID           uint16                   `json:"event_id"`
+	Depth             int                      `json:"depth"`
+	Effect            string                   `json:"effect"`
+	NextPC            uint16                   `json:"next_pc"`
+	Input             *InputUse                `json:"input,omitempty"`
+	Message           *DisplayedMessage        `json:"message,omitempty"`
+	Dialog            *DialogRecord            `json:"dialog,omitempty"`
+	ReturnedEntry     *uint16                  `json:"returned_entry,omitempty"`
 }
 type Blocker struct {
 	Cause       *Blocker     `json:"cause,omitempty"`

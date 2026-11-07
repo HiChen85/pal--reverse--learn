@@ -35,7 +35,11 @@ func journeyBattles(report *palflow.Report, control *palgame.ControlReport) []jo
 			}
 		}
 		if s.Combat != nil {
-			found = append(found, journeyBattleSummary{Mode: "numeric", EnemyTeam: s.Operands[0], RawResult: s.Combat.RawResult, Rounds: len(s.Combat.Reports), Work: s.Combat.Work})
+			mode := "numeric"
+			if s.Combat.Policy == "fast_verify" {
+				mode = "fast_verify"
+			}
+			found = append(found, journeyBattleSummary{Mode: mode, EnemyTeam: s.Operands[0], RawResult: s.Combat.RawResult, Rounds: len(s.Combat.Reports), Work: s.Combat.Work})
 			for _, callback := range s.Combat.Triggers {
 				reports(callback)
 			}

@@ -45,12 +45,20 @@ func battleOpcodeName(op uint16) string {
 		return "steal enemy cash or an item using explicit random input"
 	case 0x6b:
 		return "set signed enemy blow displacement"
+	case 0x88:
+		return "spend up to 5000 cash to set magic base damage"
 	case 0x89:
 		return "set raw battle result"
 	case 0x91:
 		return "jump if invoking enemy is not first of its kind"
 	case 0x92:
 		return "request party magic casting animation"
+	case 0x9c:
+		return "divide one enemy across available battle slots"
+	case 0x9e:
+		return "summon enemies within the current battle slot extent"
+	case 0x9f:
+		return "transform enemy numbers while preserving HP and script continuations"
 	}
 	return ""
 }
@@ -89,7 +97,7 @@ func (r *Runner) evaluateBattleOps(state *State, step *TraceStep, inst Instructi
 			}
 			for i := range w.Battle.Enemies {
 				x := &w.Battle.Enemies[i]
-				if x.ObjectID != 0 {
+				if occupiedEnemy(*x) {
 					setBattleEnemyHP(x, uint16(x.HP)-a[1])
 				}
 			}
@@ -108,9 +116,10 @@ func (r *Runner) evaluateBattleOps(state *State, step *TraceStep, inst Instructi
 		if err != nil {
 			return true, err
 		}
-		object, ok := w.Objects[x.ObjectID]
+		id := battleObjectID(*x)
+		object, ok := w.Objects[id]
 		if !ok {
-			return true, fmt.Errorf("enemy object %d is absent from world snapshot", x.ObjectID)
+			return true, fmt.Errorf("enemy object %d is absent from world snapshot", id)
 		}
 		v, err := random(0, 9)
 		if err != nil {
@@ -199,9 +208,10 @@ func (r *Runner) evaluateBattleOps(state *State, step *TraceStep, inst Instructi
 		if err != nil {
 			return true, err
 		}
-		object, ok := w.Objects[x.ObjectID]
+		id := battleObjectID(*x)
+		object, ok := w.Objects[id]
 		if !ok {
-			return true, fmt.Errorf("enemy object %d is absent from world snapshot", x.ObjectID)
+			return true, fmt.Errorf("enemy object %d is absent from world snapshot", id)
 		}
 		tables, err := r.battleTables()
 		if err != nil {
@@ -273,6 +283,24 @@ func (r *Runner) evaluateBattleOps(state *State, step *TraceStep, inst Instructi
 		x.Enemy.Raw[20] = x.Enemy.StealCount
 	case 0x6b:
 		w.BattleBlow = int16(a[0])
+	case 0x88:
+		object, ok := w.Objects[a[0]]
+		if !ok {
+			return true, fmt.Errorf("money magic object %d is absent from world snapshot", a[0])
+		}
+		tables, err := r.battleTables()
+		if err != nil {
+			return true, err
+		}
+		if int(object[0]) >= len(tables.Magics) {
+			return true, fmt.Errorf("money magic table index %d is outside imported table", object[0])
+		}
+		spent := min(w.Cash, uint32(5000))
+		if w.MagicBaseDamage == nil {
+			w.MagicBaseDamage = map[uint16]uint16{}
+		}
+		w.Cash -= spent
+		w.MagicBaseDamage[object[0]] = uint16(spent * 2 / 5)
 	case 0x89:
 		w.BattleResult, w.BattleResultSet = a[0], true
 	case 0x91:
@@ -283,8 +311,15 @@ func (r *Runner) evaluateBattleOps(state *State, step *TraceStep, inst Instructi
 		if err != nil {
 			return true, err
 		}
-		for _, other := range w.Battle.Enemies {
-			if other.Slot < x.Slot && other.ObjectID == x.ObjectID {
+		if x.Slot > topologyExtent(w.Battle) {
+			break
+		}
+		for slot := 0; slot < x.Slot; slot++ {
+			id := uint16(0)
+			if other := topologyEnemy(w.Battle, slot); other != nil {
+				id = battleObjectID(*other)
+			}
+			if id == battleObjectID(*x) {
 				branch(a[0])
 				break
 			}
@@ -295,6 +330,14 @@ func (r *Runner) evaluateBattleOps(state *State, step *TraceStep, inst Instructi
 				return true, fmt.Errorf("magic casting party index %d is outside supplied party", a[0]-1)
 			}
 			evidence.Screen = &ScreenRecord{Kind: "battle_party_pre_magic"}
+		}
+	case 0x9c, 0x9e, 0x9f:
+		failed, err := r.battleTopology(w, frame.EventID, inst)
+		if err != nil {
+			return true, err
+		}
+		if failed != 0 {
+			branch(failed)
 		}
 	}
 	var nextPC uint16
@@ -315,6 +358,9 @@ func (r *Runner) evaluateBattleOps(state *State, step *TraceStep, inst Instructi
 func battleSnapshot(w *WorldState) error {
 	if w.Battle == nil {
 		return fmt.Errorf("enemy instruction requires an explicit battle snapshot")
+	}
+	if w.Battle.MaxEnemySlot < 0 || w.Battle.MaxEnemySlot >= paldata.EnemyTeamSize {
+		return fmt.Errorf("battle enemy extent %d is outside classic capacity", w.Battle.MaxEnemySlot)
 	}
 	seen := [paldata.EnemyTeamSize]bool{}
 	for _, x := range w.Battle.Enemies {

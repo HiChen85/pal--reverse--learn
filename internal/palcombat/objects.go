@@ -157,12 +157,9 @@ func (e *Engine) objectAction(s *Snapshot, actor int, a Action, r *Report) error
 	}
 	if ok {
 		target := a.Target
-		if a.Target.Side == Enemy && s.Enemies[a.Target.Index].HP <= 0 {
-			for j, x := range s.Enemies {
-				if x.HP > 0 {
-					target.Index = j
-					break
-				}
+		if a.Target.Side == Enemy && (!enemyPresent(s.Enemies[a.Target.Index]) || s.Enemies[a.Target.Index].HP <= 0) {
+			if next := retarget(*s, a.Target.Index); next >= 0 {
+				target.Index = next
 			}
 		}
 		if _, err = e.runObjectScript(s, a.ObjectID, 2, "magic success", target, r); err != nil {
@@ -176,8 +173,9 @@ func (e *Engine) objectAction(s *Snapshot, actor int, a Action, r *Report) error
 			targets := []int{target.Index}
 			if a.Target.Side == All {
 				targets = nil
-				for j, x := range s.Enemies {
-					if x.HP > 0 {
+				for _, j := range enemyIndexes(s) {
+					x := s.Enemies[j]
+					if enemyPresent(x) && x.HP > 0 {
 						targets = append(targets, j)
 					}
 				}

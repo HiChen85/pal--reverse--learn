@@ -30,6 +30,7 @@ type ControlReport struct {
 	InputsConsumed   int                     `json:"inputs_consumed"`
 	UnusedInputs     []palflow.Input         `json:"unused_inputs,omitempty"`
 	Work             int                     `json:"work"`
+	ScreenUpdates    int                     `json:"screen_updates"`
 	State            SessionSnapshot         `json:"state"`
 }
 
@@ -120,6 +121,9 @@ func (s *Session) control(kind string, direction uint16, inputs []palflow.Input)
 		if err := a.updateParty(direction); err != nil {
 			return report, err
 		}
+		if err := a.present(); err != nil {
+			return report, err
+		}
 		if kind == "interact" {
 			report.SearchSuppressed = touched
 			if !touched {
@@ -145,6 +149,18 @@ func (a *controlAction) spend(n int) error {
 		return errors.New("control action exceeds the combined execution budget")
 	}
 	a.work += n
+	return nil
+}
+
+// PAL_StartFrame, touch animation and manual search each have a separate
+// MakeScene + full-screen update call site. Requests consume wave/shake/fade
+// state even though this logical control model does not render pixels.
+func (a *controlAction) present() error {
+	updates, err := palflow.ApplyScenePresentation(a.s.current.World, a.source)
+	if err != nil {
+		return fmt.Errorf("control scene redraw: %w", err)
+	}
+	a.report.ScreenUpdates += updates
 	return nil
 }
 
@@ -254,6 +270,9 @@ func (a *controlAction) gameUpdate() (touched bool, err error) {
 					if err := palflow.UpdatePartyGestures(a.source, w, false); err != nil {
 						return touched, err
 					}
+					if err := a.present(); err != nil {
+						return touched, err
+					}
 				}
 				if err := a.trigger(id); err != nil {
 					return touched, err
@@ -336,7 +355,7 @@ func (a *controlAction) trigger(id uint16) error {
 		return errors.New("control action exceeds the cumulative dialogue byte budget")
 	}
 	a.textBytes += report.State.TextBytes
-	if err := a.spend(report.State.ExecutedSteps + report.State.PlayerSubsteps + report.State.WorldTicks + report.State.AutoSubsteps + report.State.CombatWork); err != nil {
+	if err := a.spend(report.State.ExecutedSteps + report.State.PlayerSubsteps + report.State.WorldTicks + report.State.AutoSubsteps + report.State.CombatWork + report.State.MediaWork); err != nil {
 		return err
 	}
 	if report.InputsConsumed < 0 || report.InputsConsumed > len(a.inputs)-a.consumed {
@@ -368,7 +387,7 @@ func (a *controlAction) auto(id uint16) error {
 	if err != nil {
 		return err
 	}
-	a.work = state.ExecutedSteps + state.PlayerSubsteps + state.WorldTicks + state.AutoSubsteps + state.CombatWork
+	a.work = state.ExecutedSteps + state.PlayerSubsteps + state.WorldTicks + state.AutoSubsteps + state.CombatWork + state.MediaWork
 	if a.work > a.s.maxSteps || state.InputIndex < a.consumed || state.InputIndex > len(a.inputs) || state.World == nil {
 		return errors.New("auto script returned invalid control execution state")
 	}
@@ -413,6 +432,9 @@ func (a *controlAction) search() error {
 				}
 				for member := range w.PartyRoles {
 					w.PartyFrames[member] = w.Direction * 3
+				}
+				if err := a.present(); err != nil {
+					return err
 				}
 			}
 			a.report.SearchEventID = id

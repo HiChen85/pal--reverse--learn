@@ -81,8 +81,10 @@ type Draw struct {
 // stage changes privately. Commit must atomically publish them, or publish
 // nothing on error. A failed round always calls Rollback, including after a
 // random-source failure; callback code must never commit the world from Run.
-// Run may edit individual snapshot values, but must not replace its fighter
-// slices or change engine-owned outcome, round, rewards or script continuations.
+// Run may edit individual snapshot values. Enemy replacement is an explicit
+// result; direct slice, reward and continuation mutations remain forbidden.
+// With a connected transaction, entry zero still reaches Run: its VM executes
+// no instructions but must apply trigger invocation context and cleanup.
 type Callbacks interface {
 	Begin(Snapshot) (ScriptTransaction, error)
 }
@@ -94,9 +96,11 @@ type ScriptTransaction interface {
 type ScriptRequest struct {
 	Hook            string
 	ObjectID, Entry uint16
-	// Invoker is a role ID for party scripts, an original team slot for
+	// Invoker is a role ID for party scripts, a fixed runtime slot for
 	// enemy scripts, and 0xffff for an all-target item/offensive magic.
-	Invoker    uint16
+	Invoker uint16
+	// Target.Index is -1 for an implicit empty fixed enemy slot. Such initial
+	// and post-battle callbacks have entry zero and still carry Invoker.
 	Target     Target
 	PoisonSlot int
 }
@@ -111,6 +115,14 @@ type ScriptResult struct {
 	// uses magic table indexes (0x0057), not magic object IDs.
 	ObjectChanges   map[uint16][7]uint16
 	MagicBaseDamage map[uint16]uint16
+	// EnemyTopology publishes the VM's bounded slot changes explicitly. Existing
+	// slice indexes remain stable, including when an empty defeated slot is reused.
+	EnemyTopology *EnemyTopology
+}
+
+type EnemyTopology struct {
+	Enemies []EnemyState
+	MaxSlot int
 }
 
 type Poison struct{ ID, Script uint16 }
@@ -159,6 +171,7 @@ type Snapshot struct {
 	TeamID          uint16               `json:"team_id"`
 	Party           []PlayerState        `json:"party"`
 	Enemies         []EnemyState         `json:"enemies"`
+	MaxEnemySlot    int                  `json:"max_enemy_slot"`
 	Inventory       map[uint16]uint16    `json:"inventory"`
 	Cash            uint32               `json:"cash"`
 	Earned          Rewards              `json:"earned"`

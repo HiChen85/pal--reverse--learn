@@ -43,8 +43,8 @@ func New(source Source, options Options) (*Runner, error) {
 
 // Trace executes one bounded invocation of the modeled trigger subset. A
 // stopped script is not proof of a valid quest route. Only the explicitly
-// modeled world/auto subset is run; combat, renderers and custom-message-file
-// span remapping are not implemented.
+// modeled world/auto subset is run. Numeric combat requires an explicit source
+// and policy; renderers and custom-message-file span remapping are not implemented.
 // A failing instruction commits neither state nor input consumption; its evidence
 // is returned separately in Blocker, after the successfully committed prefix.
 func (r *Runner) Trace(request Request) (Report, error) {
@@ -87,7 +87,7 @@ func (r *Runner) Trace(request Request) (Report, error) {
 			finalize(&report, state, request.Inputs)
 			return report, blocker
 		}
-		if state.ExecutedSteps+state.PlayerSubsteps+state.WorldTicks+state.AutoSubsteps+state.CombatWork >= r.options.MaxSteps {
+		if state.ExecutedSteps+state.PlayerSubsteps+state.WorldTicks+state.AutoSubsteps+state.CombatWork+state.MediaWork >= r.options.MaxSteps {
 			return fail("step_limit", "maximum modeled instruction count reached", nil)
 		}
 		inst, err := r.source.Instruction(frame.PC)
@@ -147,6 +147,7 @@ func finishZeroFrames(state *State) {
 func stopFrame(state *State, step *TraceStep) {
 	index := len(state.Frames) - 1
 	state.CurEquipPart = -1
+	state.DialogPlayingRNG = false // PAL_EndDialog runs after every trigger call.
 	returned := state.Frames[index].NextEntry
 	state.Frames = state.Frames[:index]
 	if step != nil {
@@ -296,27 +297,48 @@ func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, input
 		state.Frames = append(state.Frames, Frame{PC: a[0], Entry: a[0], NextEntry: a[0], EventID: context})
 		step.Effect = "call trigger with explicit/inherited event context; callee return entry is ignored"
 	case 5:
-		if a[2] != 0 {
-			world := CloneWorld(state.World)
-			if err := updatePartyGestures(r.source, world, false); err != nil {
-				return fmt.Errorf("redraw standing gestures: %w", err)
-			}
-			state.World = world
-		}
-		if err := advance(); err != nil {
-			return err
-		}
+		world := CloneWorld(state.World)
+		updates, kind := 0, "redraw"
 		delay := uint32(a[1]) * 60
 		if a[1] == 0 {
 			delay = 60
 		}
-		step.Screen = &ScreenRecord{Kind: "redraw", ClearDialogRequested: true, OverworldDelayMilliseconds: delay}
-		step.Effect = fmt.Sprintf("record dialog-clear/redraw request and conditional overworld delay; standing gestures updated=%t; no rendering or wall-clock wait", a[2] != 0)
+		switch {
+		case state.DialogPlayingRNG:
+			// This branch restores the backing surface without displaying it.
+			kind, delay = "redraw_rng_restore", 0
+		case world != nil && world.InBattle:
+			// BattleMakeScene applies waves but has no overworld implicit fade.
+			applyWavePresentation(world)
+			advanceScreenRequests(world, 1)
+			updates, kind, delay = 1, "redraw_battle", 0
+		default:
+			if a[2] != 0 {
+				if err := updatePartyGestures(r.source, world, false); err != nil {
+					return fmt.Errorf("redraw standing gestures: %w", err)
+				}
+			}
+			if world != nil {
+				var err error
+				updates, err = r.cameraPresent(world)
+				if err != nil {
+					return fmt.Errorf("redraw scene: %w", err)
+				}
+			}
+		}
+		if err := advance(); err != nil {
+			return err
+		}
+		state.World = world
+		step.Screen = &ScreenRecord{Kind: kind, ClearDialogRequested: true, OverworldDelayMilliseconds: delay, ScreenUpdates: updates}
+		step.Effect = fmt.Sprintf("record dialog-clear/%s and %d full-screen requests, applying modeled wave/shake/fade side effects; no rendering or wall-clock wait", kind, updates)
 	case 0x8e:
 		if err := advance(); err != nil {
 			return err
 		}
-		step.Screen = &ScreenRecord{Kind: "restore_screen", ClearDialogRequested: true}
+		state.World = CloneWorld(state.World)
+		advanceScreenRequests(state.World, 1)
+		step.Screen = &ScreenRecord{Kind: "restore_screen", ClearDialogRequested: true, ScreenUpdates: 1}
 		step.Effect = "record dialog-clear and screen-restore request; no rendering executed"
 	case 6:
 		input, err := consume(state, inputs, InputRandom)
@@ -365,9 +387,6 @@ func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, input
 			return advance()
 		}
 	case 0x3b, 0x3c, 0x3d, 0x3e:
-		if err := advance(); err != nil {
-			return err
-		}
 		dialog := &DialogRecord{Rendered: false}
 		switch inst.Opcode {
 		case 0x3b:
@@ -388,6 +407,22 @@ func (r *Runner) evaluate(state *State, step *TraceStep, inst Instruction, input
 			dialog.Position = "center_window"
 			dialog.Color = uint8(a[0])
 		}
+		// StartDialog only enables this global flag when a portrait and the
+		// RNG parameter are both present; ordinary StartDialog does not reset it.
+		playing := dialog.RNG && dialog.Portrait != 0
+		world := state.World
+		if playing && world != nil {
+			world = CloneWorld(world)
+			if world.ScreenBackupRequests == ^uint64(0) {
+				return fmt.Errorf("dialog screen backup request counter overflow")
+			}
+			world.ScreenBackupRequests++
+		}
+		if err := advance(); err != nil {
+			return err
+		}
+		state.World = world
+		state.DialogPlayingRNG = state.DialogPlayingRNG || playing
 		step.Dialog = dialog
 		step.Effect = "record dialog presentation configuration; no rendering performed"
 	case 0xffff:

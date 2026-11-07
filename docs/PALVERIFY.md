@@ -26,7 +26,7 @@ go run ./cmd/palverify journey -data "$PAL_DATA" \
   -route testdata/routes/sample-opening-wine-village.json -out reports/opening-journey.json
 ```
 
-路线 `version=1`，根字段为 `name`、`encoding`、`layout`、`files_sha256`、`actions`。首动作必须为 `enter`。每个动作明确给出 `inputs: []`，可选 `expected_messages`、`expected_scene`、`expected_inventory`；消息顺序或状态不符返回非零，报告会注明该动作是否已经提交。
+路线 `version=1`，根字段为 `name`、`encoding`、`layout`、`files_sha256`、`actions`。首动作必须为 `enter`。每个动作明确给出 `inputs: []`，可选 `expected_messages`、`expected_scene`、`expected_inventory`、`expected_event_states`；`expected_event_states` 按事件ID断言精确有符号状态值，可验证机关破坏/开启。消息顺序或状态不符返回非零，报告会注明该动作是否已经提交。
 
 | type | 参数 | 执行行为 |
 | --- | --- | --- |
@@ -65,7 +65,19 @@ go run ./cmd/palverify enter -data "$PAL_DATA" -layout dos -encoding big5 \
 
 读取同一数据目录后建立会话。`PAT.MKF` 可用时显示320×200地图、人物/事件叠层，提供方向、调查和物品使用。视口为静态资源预览，尚未实现淡入淡出、波纹、染色、RNG过场或音频。来源选项改变后须重新读取，界面场景下拉不会传送现有会话。
 
-“声明场景已进入”与下方事件ID调用仅供诊断。导出包含动作意图、真实调用请求/选项、前后状态及是否提交；失败前缀供排查，活动会话只提交完整动作。完整原版会话跨进程保存及原版RPG存档尚未实现。
+“声明场景已进入”与下方事件ID调用仅供诊断。导出包含动作意图、真实调用请求/选项、前后状态及是否提交；失败前缀供排查，活动会话只提交完整动作。已支持[工作台 JSON 会话存取](SESSION_SAVE.md)，原版 RPG 存档尚未兼容。
+
+### 快速验证战斗
+
+```sh
+go run ./cmd/palverify journey -data "$PAL_DATA" \
+  -route testdata/routes/sample-opening-island-landfall.json \
+  -battle-mode fast_verify -compact -out reports/fast-journey.json
+```
+
+默认 `auto_attack` 使用导入数值。`fast_verify` 仅在独立战斗副本中将非零敌人模板 HP 降为 1，召唤和变形使用同一副本；行动顺序、战斗脚本、奖励和胜败分支仍实际执行，失败不会被替换为胜利。此策略可能减少回合、改变 HP 条件分支，不用于原数值平衡验收。报告记录实际 `execution_policy.battle_mode`、简化范围和每场 `battles[].mode`。MyGo 提供相同开关，在重置会话后应用。
+
+`PAT.MKF`、`RNG.MKF`、`FBP.MKF` 按存在情况自动载入，相关指令要求实际资源。报告列出实际摘要；新路线可通过 `optional_files_sha256` 固定这三项，`-init-route` 自动记录已提供的项。旧七文件路线仍可执行，但没有固定其未列出的媒体资源。
 
 ## 本地回归与退出码
 

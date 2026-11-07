@@ -182,6 +182,9 @@ func (f *fakeCallbacks) Begin(Snapshot) (ScriptTransaction, error) {
 	return &fakeTransaction{owner: f, staged: f.world}, nil
 }
 func (f *fakeTransaction) Run(q ScriptRequest, s *Snapshot, r RandomSource) (ScriptResult, error) {
+	if q.Entry == 0 {
+		return ScriptResult{Success: true}, nil
+	}
 	f.staged++
 	if f.owner.run != nil {
 		return f.owner.run(q, s, r)

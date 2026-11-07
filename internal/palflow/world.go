@@ -77,6 +77,14 @@ type WorldState struct {
 	Inventory          map[uint16]int        `json:"inventory"`
 	InventorySlots     []InventorySlot       `json:"inventory_slots"`
 	PlayerSprites      map[uint16]uint16     `json:"player_sprites"`
+
+	CurrentRNG           uint16 `json:"current_rng"`
+	CurrentRNGKnown      bool   `json:"current_rng_known"`
+	ScreenShakeTime      uint16 `json:"screen_shake_time"`
+	ScreenShakeLevel     uint16 `json:"screen_shake_level"`
+	EndingEffectSprite   uint16 `json:"ending_effect_sprite"`
+	ScreenBackupRequests uint64 `json:"screen_backup_requests"`
+	WavePhase            uint8  `json:"wave_phase"`
 }
 
 type WorldPoison struct {

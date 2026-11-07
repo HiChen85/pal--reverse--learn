@@ -114,6 +114,9 @@ func InitialIdleFrames(g *paldata.Game) map[uint16]uint16 {
 // Source reads direct indexes. RedactText keeps evidence local without copying
 // the game's dialogue into reports intended for sharing.
 type Source struct {
+	Palettes      *palasset.PaletteCatalog
+	RNG           *palasset.RNGCatalog
+	FBP           *palasset.FBPCatalog
 	battleContext *palflow.CombatContext
 	Runtime       *paldata.RuntimeTables
 	Random        palflow.ScriptRandomSource
@@ -121,6 +124,22 @@ type Source struct {
 	RedactText    bool
 	Assets        *palasset.SpriteCatalog
 	Maps          *palasset.MapCatalog
+}
+
+// PaletteAvailable validates the retained PAT entry without exposing pixels.
+// Out-of-range IDs model PAL_GetPalette's NULL result; a missing catalog is
+// unknown availability, while malformed chunk contents remain explicit errors.
+func (s Source) PaletteAvailable(id uint16, night bool) (bool, error) {
+	if s.Palettes == nil || s.Palettes.SourceSHA256() == "" {
+		return false, fmt.Errorf("scene palette availability requires a local PAT catalog")
+	}
+	if int(id) >= s.Palettes.Count() {
+		return false, nil
+	}
+	if _, err := s.Palettes.Palette(id, night); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (s Source) RuntimeTables() *paldata.RuntimeTables    { return s.Runtime }

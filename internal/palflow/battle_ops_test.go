@@ -23,7 +23,7 @@ func battleWorld() *WorldState {
 		InventorySlots: []InventorySlot{},
 		Roles:          map[uint16][75]uint16{2: {7: 100, 9: 40}, 0: {7: 80, 9: 30}},
 		Objects:        map[uint16][7]uint16{10: {0: 0, 1: 5}, 11: {0: 1, 1: 9}},
-		Battle: &palcombat.Snapshot{Outcome: palcombat.Ongoing, Enemies: []palcombat.EnemyState{
+		Battle: &palcombat.Snapshot{Outcome: palcombat.Ongoing, MaxEnemySlot: 3, Enemies: []palcombat.EnemyState{
 			{Slot: 3, ObjectID: 10, HP: 100, Enemy: paldata.Enemy{HP: 100, CollectValue: 10, Raw: [35]uint16{11: 100, 34: 10}}},
 			{Slot: 1, ObjectID: 11, HP: 60, Enemy: paldata.Enemy{ID: 1, HP: 60, Raw: [35]uint16{11: 60}}},
 		}},
@@ -32,7 +32,7 @@ func battleWorld() *WorldState {
 
 func battleRuntime() *paldata.RuntimeTables {
 	return &paldata.RuntimeTables{
-		Enemies: []paldata.Enemy{{HP: 100}, {HP: 60}},
+		Enemies: []paldata.Enemy{{HP: 100}, {ID: 1, HP: 60}},
 		Stores:  [][paldata.StoreSize]uint16{{20, 21, 22, 23, 24, 25, 26, 27, 28}},
 	}
 }

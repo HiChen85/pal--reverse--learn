@@ -100,6 +100,7 @@ func (r *Runner) evaluatePlayer(state *State, step *TraceStep, inst Instruction)
 	state.ScriptSuccess = working.ScriptSuccess
 	state.LastEventID = working.LastEventID
 	state.PlayerSubsteps = working.PlayerSubsteps
+	state.DialogPlayingRNG = working.DialogPlayingRNG
 	state.Frames[len(state.Frames)-1].PC = nextPC
 	step.PlayerSubsteps = evidence
 	step.Effect = playerOpcodeName(inst.Opcode)
@@ -349,7 +350,7 @@ func (r *Runner) rebuildEquipment(state *State, reserveOuter int) ([]PlayerSubst
 			return nil, err
 		}
 	}
-	remaining := r.options.MaxSteps - state.ExecutedSteps - state.PlayerSubsteps - state.WorldTicks - state.AutoSubsteps - state.CombatWork - reserveOuter
+	remaining := r.options.MaxSteps - state.ExecutedSteps - state.PlayerSubsteps - state.WorldTicks - state.AutoSubsteps - state.CombatWork - state.MediaWork - reserveOuter
 	if remaining < 0 {
 		return nil, fmt.Errorf("no shared instruction budget remains for equipment rebuild")
 	}
@@ -409,6 +410,9 @@ func (r *Runner) rebuildEquipment(state *State, reserveOuter int) ([]PlayerSubst
 				}
 			}
 			state.CurEquipPart = -1 // PAL_RunTriggerScript resets this on every return.
+			// PAL_UpdateEquipments calls PAL_RunTriggerScript for every nonzero
+			// item, including a zero script address; its PAL_EndDialog still runs.
+			state.DialogPlayingRNG = false
 			object = world.Objects[item]
 			object[3] = entry
 			world.Objects[item] = object

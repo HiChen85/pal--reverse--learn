@@ -79,7 +79,21 @@ go run ./cmd/palverify journey -data "$PAL_DATA" \
   -compact -route testdata/routes/sample-opening-island-landfall.json -out reports/opening-journey.json
 ```
 
-目录另需 `MGO.MKF`、`MAP.MKF`、`GOP.MKF`；原生 UI 的彩色视口另需 `PAT.MKF`。资源留在用户本地。完整命令与证据范围见 [PALVERIFY.md](docs/PALVERIFY.md)。
+目录另需 `MGO.MKF`、`MAP.MKF`、`GOP.MKF`；彩色视口与相关淡入操作需要 `PAT.MKF`，动画/图片指令需要 `RNG.MKF`、`FBP.MKF`。资源留在用户本地。完整命令与证据范围见 [PALVERIFY.md](docs/PALVERIFY.md)。
+
+新增[六石像连续路线](testdata/routes/sample-opening-six-statues.json)：1722 动作、374 次消息引用，实际经过四场 Go 数值战斗、六座石像、破天锤消耗及出口开启。原数值模式四战共 16 回合；`-battle-mode fast_verify` 在独立副本中把非零敌人初始 HP 降为 1，同路线共 8 回合，继续执行脚本与奖励。快验结果不能证明原版平衡一致。
+
+MyGo 原版逻辑会话已支持[本地 JSON 保存和恢复](docs/SESSION_SAVE.md)，绑定资源摘要并保留策略与随机状态；尚不兼容原版 RPG 存档。快速战斗开关在显式重置会话后生效。
+
+后续[返乡喂药清单](testdata/routes/sample-opening-medicine-campaign.json)已在同一会话连续验证2839动作、658次消息引用，覆盖宫殿剧情、离岛返乡和仙丹消耗，进入夜间。运行方式：
+
+```sh
+go run ./cmd/palverify campaign -data "$PAL_DATA" \
+  -manifest testdata/routes/sample-opening-medicine-campaign.json \
+  -out-dir reports/medicine-new-run -battle-mode fast_verify -max-steps 100000
+```
+
+父目录须已存在，输出目录中预定报告不能已存在。[分段验证说明](docs/PAL_CAMPAIGN.md)解释摘要链与失败记录；清单执行成功仍不代表全主支线已通关。
 
 MyGo 的“原版数据”页可选择目录、编码和布局，记录单次调用或启用持续逻辑会话；“声明场景已进入”仅用于显式检查点测试。除了显式检查点回归，当前已从真实 `NewSession` 执行场景 1 开场脚本，再连续验证事件 5/6/7 的消息 ID、库存与重复触发拒绝；这属于逻辑顺序回放，没有证明地图上的调查距离、方向或原版程序行为一致。
 

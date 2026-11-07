@@ -46,6 +46,15 @@ func opcodeName(op uint16) string {
 	case 0xffff:
 		return "message_table_reference"
 	default:
+		if name := paletteTransitionOpcodeName(op); name != "" {
+			return name
+		}
+		if name := mediaOpcodeName(op); name != "" {
+			return name
+		}
+		if name := cameraOpcodeName(op); name != "" {
+			return name
+		}
 		if name := shopOpcodeName(op); name != "" {
 			return name
 		}
@@ -87,6 +96,12 @@ func opcodeName(op uint16) string {
 }
 func supported(op uint16) bool { return opcodeName(op) != "unsupported" }
 func operandRestriction(inst Instruction) string {
+	if inst.Opcode == 0x80 {
+		return "palette transition requires a checked local palette and optional bounded automatic scene updates; table-only audit cannot safely expand it"
+	}
+	if inst.Opcode == 0x93 || (inst.Opcode == 0x7f && (inst.Operands[0] != 0 || inst.Operands[1] != 0) && inst.Operands[2] != 0xffff) {
+		return "camera/scene fade invokes game updates and automatic scripts; table-only audit cannot safely expand it"
+	}
 	if inst.Opcode == 0x70 {
 		return "party walk requires a complete party world snapshot and bounded auto scheduling; table-only audit cannot expand it"
 	}

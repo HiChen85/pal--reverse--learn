@@ -17,6 +17,9 @@ func (c *effectCallbacks) Begin(Snapshot) (ScriptTransaction, error) {
 	return &effectTransaction{c}, nil
 }
 func (t *effectTransaction) Run(q ScriptRequest, s *Snapshot, _ RandomSource) (ScriptResult, error) {
+	if q.Entry == 0 {
+		return ScriptResult{Success: true}, nil
+	}
 	return t.owner.run(q, s)
 }
 func (t *effectTransaction) Commit(Snapshot) error { t.owner.commits++; return nil }

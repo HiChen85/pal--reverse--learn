@@ -65,17 +65,25 @@ func (r *Runner) evaluatePoison(state *State, step *TraceStep, inst Instruction,
 		if err := battleSnapshot(w); err != nil {
 			return true, err
 		}
-		slots := []int{int(frame.EventID)}
-		if inst.Opcode != 0x5e && a[0] != 0 {
-			slots = nil
-			for _, enemy := range w.Battle.Enemies {
-				if enemy.ObjectID != 0 {
-					slots = append(slots, enemy.Slot)
-				}
-			}
-			slices.Sort(slots)
+		all := inst.Opcode != 0x5e && a[0] != 0
+		first := int(frame.EventID)
+		if all {
+			first = 0
 		}
-		for _, slot := range slots {
+		for slot := first; ; slot++ {
+			if all {
+				if slot > topologyExtent(working.World.Battle) {
+					break
+				}
+				// All-target poison/cure checks the current slot's object at
+				// visitation time. Earlier callbacks may fill or extend slots.
+				current := topologyEnemy(working.World.Battle, slot)
+				if current == nil || !occupiedEnemy(*current) {
+					continue
+				}
+			} else if slot != first {
+				break
+			}
 			x, err := battleEnemy(working.World, uint16(slot))
 			if err != nil {
 				return true, err
@@ -99,9 +107,10 @@ func (r *Runner) evaluatePoison(state *State, step *TraceStep, inst Instruction,
 				}
 				continue
 			}
-			object, ok := working.World.Objects[x.ObjectID]
+			id := battleObjectID(*x)
+			object, ok := working.World.Objects[id]
 			if !ok {
-				return true, fmt.Errorf("enemy object %d missing", x.ObjectID)
+				return true, fmt.Errorf("enemy object %d missing", id)
 			}
 			value, err := battleRandom(&working, &evidence, inputs, 0, 9)
 			if err != nil {

@@ -25,8 +25,6 @@ func conditionsOpcodeName(op uint16) string {
 		return "set screen wave and signed progression"
 	case 0x79:
 		return "jump if a party role has specified name"
-	case 0x80:
-		return "toggle night palette flag and record palette fade"
 	case 0x81:
 		return "jump and fail unless party faces active scene event in range"
 	case 0x83:
@@ -263,14 +261,6 @@ func (r *Runner) evaluateConditions(state *State, step *TraceStep, inst Instruct
 			err = branch(count < threshold, a[2])
 			evidence.Effect += fmt.Sprintf("; equipped count %d, effective threshold %d", count, threshold)
 		}
-	case 0x80:
-		if a[0] == 0 {
-			return true, fmt.Errorf("palette fade with scene updates requires palette resource validation and 32 bounded world updates; not modeled")
-		}
-		w.NightPalette = !w.NightPalette
-		evidence.Screen = &ScreenRecord{Kind: "palette_fade"}
-		evidence.Effect += fmt.Sprintf("; palette %d, night %t, update-scene argument %t; rendering not executed", w.Palette, w.NightPalette, a[0] == 0)
-		err = branch(false, 0)
 	case 0x81, 0x83, 0x84:
 		inside, lookupErr := inScene(a[0])
 		if lookupErr != nil {

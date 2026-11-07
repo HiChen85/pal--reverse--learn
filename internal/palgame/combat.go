@@ -23,9 +23,11 @@ func (s Source) RunBattleWithContext(world *palflow.WorldState, team uint16, bos
 // later failure returns no World and cannot update a live Session checkpoint.
 func (s Source) RunBattle(world *palflow.WorldState, team uint16, boss bool, inputs []palflow.Input, options palflow.Options) (palflow.CombatExecution, error) {
 	result := palflow.CombatExecution{Result: -1, RawResult: 1000}
-	if world == nil || world.BattleMode != "auto_attack" {
-		return result, fmt.Errorf("numeric battle requires the explicit auto_attack policy")
+	if world == nil || world.BattleMode != "auto_attack" && world.BattleMode != "fast_verify" {
+		return result, fmt.Errorf("numeric battle requires the explicit auto_attack or fast_verify policy")
 	}
+	result.Policy = world.BattleMode
+	result.Simplifications = BattlePolicyNotes(world.BattleMode)
 	if world.InBattle {
 		return result, &palcombat.UnsupportedError{Feature: "nested battle"}
 	}
@@ -78,6 +80,9 @@ func (s Source) RunBattle(world *palflow.WorldState, team uint16, boss bool, inp
 	if err != nil {
 		return result, err
 	}
+	if w.BattleMode == "fast_verify" {
+		tables = fastVerifyTables(tables)
+	}
 	party, err := combatParty(w)
 	if err != nil {
 		return result, err
@@ -87,7 +92,13 @@ func (s Source) RunBattle(world *palflow.WorldState, team uint16, boss bool, inp
 		return result, err
 	}
 	random := &combatRandom{state: w.BattleRandomState}
-	callbacks := &combatCallbacks{source: s, world: w, random: random, options: options, inputs: slices.Clone(inputs), context: context, work: initial.PlayerSubsteps}
+	// Callback-created enemies resolve through the same per-fight tables as the
+	// numeric engine, including the explicit verification-only HP cap.
+	battleSource := s
+	if w.BattleMode == "fast_verify" {
+		battleSource.Runtime = tables
+	}
+	callbacks := &combatCallbacks{source: battleSource, world: w, random: random, options: options, inputs: slices.Clone(inputs), context: context, work: initial.PlayerSubsteps}
 	engine, err := palcombat.New(palcombat.Config{Tables: tables, Game: g, Party: party, TeamID: team, Battlefield: w.Battlefield, Boss: boss, HidingTime: 0, Cash: w.Cash, Inventory: inventory, Random: random, Callbacks: callbacks})
 	if err != nil {
 		return result, err
@@ -144,6 +155,14 @@ func (s Source) RunBattle(world *palflow.WorldState, team uint16, boss bool, inp
 		callbacks.world.BattleResult, callbacks.world.BattleResultSet = result.RawResult, false
 		result.World = palflow.CloneWorld(callbacks.world)
 		result.Triggers, result.InputsConsumed, result.Work = callbacks.triggers, callbacks.inputIndex, callbacks.work
+		// PAL_BattleMain invokes the pre-battle trigger for each slot through
+		// MaxEnemyIndex without testing the entry address (battle.c, pinned
+		// d4bf69b64d335cd680555af9df90e7ec4f3006a3). A valid engine has at
+		// least one slot and its first committed Submit runs that pre-battle
+		// pass. Entry zero executes no VM instructions, but propagates trigger
+		// context and PAL_EndDialog still clears the global RNG-dialog flag.
+		// Instruction-free reports are omitted, so len(Triggers) is insufficient.
+		result.DialogEnded = true
 		ctx := callbacks.context
 		ctx.IdleFrames = maps.Clone(ctx.IdleFrames)
 		result.Context = &ctx
@@ -158,10 +177,11 @@ func (s Source) RunBattle(world *palflow.WorldState, team uint16, boss bool, inp
 
 func automaticCombatAttacks(snapshot palcombat.Snapshot) []palcombat.Action {
 	target := 0
+	lowestSlot := paldata.EnemyTeamSize
 	for i, enemy := range snapshot.Enemies {
-		if enemy.HP > 0 {
+		if enemy.ObjectID != 0 && !enemy.Rewarded && enemy.HP > 0 && enemy.Slot < lowestSlot {
 			target = i
-			break
+			lowestSlot = enemy.Slot
 		}
 	}
 	actions := make([]palcombat.Action, 0, len(snapshot.Party))
@@ -426,15 +446,19 @@ func (tx *combatTransaction) Run(request palcombat.ScriptRequest, snapshot *palc
 		return result, err
 	}
 	remaining := tx.owner.options.MaxSteps - tx.owner.work
-	if remaining < 1 {
+	if remaining < 0 || remaining == 0 && request.Entry != 0 {
 		return result, fmt.Errorf("combat script %04x exhausted the shared instruction budget", request.Entry)
 	}
 	options := tx.owner.options
-	options.MaxSteps = remaining
+	// A zero-entry trigger changes invocation context but executes no
+	// instructions. It can therefore finish at an exactly exhausted budget;
+	// Trace still requires a positive configured limit for all invocations.
+	options.MaxSteps = max(1, remaining)
 	options.MaxTextBytes -= tx.textBytes
-	if options.MaxTextBytes < 1 {
+	if options.MaxTextBytes < 0 || options.MaxTextBytes == 0 && request.Entry != 0 {
 		return result, fmt.Errorf("combat scripts exhausted the shared dialogue byte budget")
 	}
+	options.MaxTextBytes = max(1, options.MaxTextBytes)
 	source := tx.owner.source
 	source.Random = combatScriptRandom{random: random}
 	runner, err := palflow.New(source, options)
@@ -443,10 +467,14 @@ func (tx *combatTransaction) Run(request palcombat.ScriptRequest, snapshot *palc
 	}
 	before := palflow.CloneWorld(tx.world)
 	report, err := runner.Trace(palflow.Request{World: tx.world, Entry: request.Entry, EventID: request.Invoker, LastEventID: tx.context.LastEventID, IdleFrames: maps.Clone(tx.context.IdleFrames), Inputs: tx.owner.inputs[tx.inputIndex:]})
-	tx.owner.work += report.State.ExecutedSteps + report.State.AutoSubsteps + report.State.PlayerSubsteps + report.State.WorldTicks + report.State.CombatWork
+	tx.owner.work += report.State.ExecutedSteps + report.State.AutoSubsteps + report.State.PlayerSubsteps + report.State.WorldTicks + report.State.CombatWork + report.State.MediaWork
 	evidence := report
 	evidence.State.World = nil
-	tx.owner.triggers = append(tx.owner.triggers, evidence)
+	// Keep the VM's zero-entry context transition without retaining an empty
+	// per-hook report. Work, text and input consumption are all zero there.
+	if request.Entry != 0 || err != nil {
+		tx.owner.triggers = append(tx.owner.triggers, evidence)
+	}
 	appendCombatScriptTrace(&result.Trace, request.Entry, report.Trace, report.State.ScriptSuccess)
 	if err != nil {
 		return result, fmt.Errorf("combat %s object %04x script %04x: %w", request.Hook, request.ObjectID, request.Entry, err)
@@ -487,6 +515,9 @@ func (tx *combatTransaction) Run(request palcombat.ScriptRequest, snapshot *palc
 		}
 		result.ForcedOutcome = &outcome
 		after.BattleResultSet = false
+	}
+	if after.Battle != nil && (after.Battle.MaxEnemySlot != snapshot.MaxEnemySlot || !sameCombatEnemyTopology(after.Battle.Enemies, snapshot.Enemies)) {
+		result.EnemyTopology = &palcombat.EnemyTopology{Enemies: slices.Clone(after.Battle.Enemies), MaxSlot: after.Battle.MaxEnemySlot}
 	}
 	if err := combatWorldToSnapshot(after, snapshot); err != nil {
 		return result, err
@@ -581,13 +612,25 @@ func snapshotToCombatWorld(w *palflow.WorldState, snapshot palcombat.Snapshot) e
 	return nil
 }
 
-// Only fields exposed to script mutation are copied. Fighter slices, identity,
-// round counters, continuations and rewards remain owned by the numeric engine.
+func sameCombatEnemyTopology(a, b []palcombat.EnemyState) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Slot != b[i].Slot || a[i].ObjectID != b[i].ObjectID || a[i].Rewarded != b[i].Rewarded || a[i].TurnStart != b[i].TurnStart || a[i].BattleEnd != b[i].BattleEnd || a[i].Ready != b[i].Ready {
+			return false
+		}
+	}
+	return true
+}
+
+// Only numeric fields are copied directly. Bounded enemy topology is returned
+// separately for engine validation; party identity and reward state stay owned.
 func combatWorldToSnapshot(w *palflow.WorldState, snapshot *palcombat.Snapshot) error {
 	if w == nil || w.Battle == nil || !w.InBattle {
 		return &palcombat.UnsupportedError{Feature: "script removes active battle state"}
 	}
-	if len(w.PartyRoles) != len(snapshot.Party) || len(w.Battle.Party) != len(snapshot.Party) || len(w.Battle.Enemies) != len(snapshot.Enemies) {
+	if len(w.PartyRoles) != len(snapshot.Party) || len(w.Battle.Party) != len(snapshot.Party) {
 		return &palcombat.UnsupportedError{Feature: "script changes combat topology"}
 	}
 	for i := range snapshot.Party {
@@ -612,9 +655,19 @@ func combatWorldToSnapshot(w *palflow.WorldState, snapshot *palcombat.Snapshot) 
 		}
 	}
 	for i := range snapshot.Enemies {
-		x, changed := &snapshot.Enemies[i], w.Battle.Enemies[i]
-		if x.ObjectID != changed.ObjectID || x.Slot != changed.Slot {
-			return &palcombat.UnsupportedError{Feature: "script changes enemy identity", ObjectID: changed.ObjectID}
+		x := &snapshot.Enemies[i]
+		var changed *palcombat.EnemyState
+		for j := range w.Battle.Enemies {
+			if w.Battle.Enemies[j].Slot == x.Slot {
+				changed = &w.Battle.Enemies[j]
+				break
+			}
+		}
+		if changed == nil {
+			return &palcombat.UnsupportedError{Feature: "script removes an enemy record", ObjectID: x.ObjectID}
+		}
+		if x.ObjectID != changed.ObjectID || x.Rewarded != changed.Rewarded {
+			continue // The explicit topology result owns this replacement.
 		}
 		x.Enemy, x.HP, x.Status, x.Poisons = changed.Enemy, changed.HP, changed.Status, changed.Poisons
 	}

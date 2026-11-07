@@ -258,6 +258,32 @@ func TestJourneyExpectationFailureReportsActualCommit(t *testing.T) {
 	}
 }
 
+func TestJourneyEventStateAssertionsPreserveActualCommit(t *testing.T) {
+	for _, want := range []int16{0, 1} {
+		dir, spec := journeyFixture(t)
+		spec.Actions = append(spec.Actions, journeyAction{Type: "interact", Inputs: []palflow.Input{}, ExpectedEventStates: map[uint16]int16{1: want}})
+		var out bytes.Buffer
+		err := runJourney([]string{"-data", dir, "-compact", "-route", journeyRouteFile(t, spec)}, &out, &bytes.Buffer{})
+		var r journeyReport
+		if e := json.Unmarshal(out.Bytes(), &r); e != nil {
+			t.Fatal(e)
+		}
+		if (err == nil) != (want == 0) || !r.Actions[1].Committed || r.Final.World.Events[1].State != 0 {
+			t.Fatal("event-state assertion rewrote or misreported committed pickup", err)
+		}
+		if want == 1 && r.Actions[1].Control == nil {
+			t.Fatal("failed event assertion lost full diagnostic")
+		}
+	}
+	_, spec := journeyFixture(t)
+	spec.Actions[0].ExpectedEventStates = map[uint16]int16{1: 0}
+	data, _ := json.Marshal(spec)
+	data = bytes.Replace(data, []byte(`"expected_event_states":{"1":0}`), []byte(`"expected_event_states":{"01":0}`), 1)
+	if _, _, err := loadJourneyRoute(journeyRouteBytes(t, data)); err == nil {
+		t.Fatal("noncanonical event ID accepted")
+	}
+}
+
 func TestJourneyControlMessagesIncludeAutoBeforeManualSearch(t *testing.T) {
 	dir, spec := journeyFixtureWithAuto(t, true)
 	messages := []uint16{1, 0}

@@ -45,7 +45,7 @@ func (a *autoScheduler) spend(work int, event, pc uint16) error {
 // inline trigger calls, as well as the outer wait instruction's reservation.
 func (a *autoScheduler) syncRemaining(event, pc uint16) error {
 	remaining := a.runner.options.MaxSteps
-	for _, used := range []int{a.state.ExecutedSteps, a.state.PlayerSubsteps, a.state.WorldTicks, a.state.AutoSubsteps, a.state.CombatWork, a.reserved} {
+	for _, used := range []int{a.state.ExecutedSteps, a.state.PlayerSubsteps, a.state.WorldTicks, a.state.AutoSubsteps, a.state.CombatWork, a.state.MediaWork, a.reserved} {
 		if used < 0 || used > remaining {
 			return fmt.Errorf("auto script event %d PC %04x exceeds the combined execution budget", event, pc)
 		}

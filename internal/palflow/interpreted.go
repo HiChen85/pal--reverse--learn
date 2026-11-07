@@ -11,6 +11,15 @@ import (
 // respective dispatchers, so one auto instruction cannot accidentally run a
 // trigger-only operation with different semantics.
 func (r *Runner) evaluateInterpreted(s *State, step *TraceStep, inst Instruction, inputs []Input) (bool, error) {
+	if ok, err := r.evaluatePaletteTransition(s, step, inst, inputs); ok {
+		return true, err
+	}
+	if ok, err := r.evaluateMedia(s, step, inst); ok {
+		return true, err
+	}
+	if ok, err := r.evaluateCamera(s, step, inst, inputs); ok {
+		return true, err
+	}
 	if ok, err := r.evaluateShop(s, step, inst, inputs); ok {
 		return true, err
 	}
@@ -112,7 +121,7 @@ func (r *Runner) runTriggerInline(state *State, entry, eventID uint16, inputs []
 			}
 			return b
 		}
-		if w.ExecutedSteps+w.PlayerSubsteps+w.WorldTicks+w.AutoSubsteps+w.CombatWork >= limit.options.MaxSteps {
+		if w.ExecutedSteps+w.PlayerSubsteps+w.WorldTicks+w.AutoSubsteps+w.CombatWork+w.MediaWork >= limit.options.MaxSteps {
 			return nil, fail("step_limit", "inline trigger exhausted the shared instruction budget", nil)
 		}
 		inst, err := r.source.Instruction(frame.PC)
@@ -145,6 +154,7 @@ func (r *Runner) runTriggerInline(state *State, entry, eventID uint16, inputs []
 	w.Finished, w.ReturnedEntry = state.Finished, state.ReturnedEntry
 	// A trigger invocation resets the global equipment part even for entry zero.
 	w.CurEquipPart = -1
+	w.DialogPlayingRNG = false
 	w.LastInlineReturn = returned
 	*state = w
 	return trace, nil

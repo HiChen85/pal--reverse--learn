@@ -96,7 +96,25 @@ func (r *Runner) evaluatePresentation(s *State, step *TraceStep, inst Instructio
 			evidence.Screen = &ScreenRecord{Kind: "fade_in", Delay: delay, Palette: w.Palette, Night: w.NightPalette}
 		}
 	case 0x73:
-		evidence.Screen = &ScreenRecord{Kind: "fade_scene", Delay: a[0]}
+		if w == nil || w.SceneResources == nil || w.SceneResources.MapID == 0 || w.SceneResources.MapSHA256 == "" || w.SceneResources.GOPSHA256 == "" || w.SceneResources.MAPArchiveSHA256 == "" || w.SceneResources.GOPArchiveSHA256 == "" {
+			return true, fmt.Errorf("scene fade requires complete loaded scene/map/GOP resource identity")
+		}
+		if w.NeedToFadeIn {
+			if err := r.requireMediaPalette(w); err != nil {
+				return true, err
+			}
+		}
+		if w.ScreenBackupRequests == ^uint64(0) {
+			return true, fmt.Errorf("screen backup request counter overflow")
+		}
+		w.ScreenBackupRequests++
+		extra := applyScenePresentation(w)
+		// VIDEO_FadeScreen makes 12*6 blended draws followed by one full
+		// draw. Speed arithmetic is WORD, so increment/multiply can wrap.
+		delay := (a[0] + 1) * 10
+		advanceScreenRequests(w, 73+extra)
+		evidence.Media = &MediaRecord{Kind: "fade screen to scene", BackupRequested: true, SceneCompositionRequested: true, SceneResources: CloneWorld(w).SceneResources, FadeSpeed: a[0], TransitionFrames: 72, FrameDelayMilliseconds: delay, DelayIntervals: 71, ImplicitFadeInRequested: extra != 0, ScreenUpdates: 73 + extra}
+		evidence.Screen = &ScreenRecord{Kind: "fade_scene", Delay: a[0], ScreenUpdates: 73 + extra}
 	case 0x77:
 		s.Music, s.MusicKnown = 0, true
 		if w != nil {

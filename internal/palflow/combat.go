@@ -14,14 +14,19 @@ type CombatSource interface {
 }
 
 type CombatExecution struct {
-	Context        *CombatContext     `json:"context,omitempty"`
-	World          *WorldState        `json:"world,omitempty"`
-	Result         int                `json:"story_branch_result"`
-	RawResult      uint16             `json:"raw_result"`
-	Reports        []palcombat.Report `json:"rounds"`
-	Triggers       []Report           `json:"triggers,omitempty"`
-	InputsConsumed int                `json:"inputs_consumed"`
-	Work           int                `json:"work"`
+	// DialogEnded records an actually reached PAL_EndDialog boundary, including
+	// a reference trigger call with entry zero (which has no instruction trace).
+	DialogEnded     bool               `json:"dialog_ended,omitempty"`
+	Policy          string             `json:"policy,omitempty"`
+	Simplifications []string           `json:"simplifications,omitempty"`
+	Context         *CombatContext     `json:"context,omitempty"`
+	World           *WorldState        `json:"world,omitempty"`
+	Result          int                `json:"story_branch_result"`
+	RawResult       uint16             `json:"raw_result"`
+	Reports         []palcombat.Report `json:"rounds"`
+	Triggers        []Report           `json:"triggers,omitempty"`
+	InputsConsumed  int                `json:"inputs_consumed"`
+	Work            int                `json:"work"`
 }
 
 type CombatContext struct {
@@ -34,14 +39,14 @@ type ContextCombatSource interface {
 }
 
 func (r *Runner) evaluateCombat(s *State, step *TraceStep, inst Instruction, inputs []Input) (bool, error) {
-	if inst.Opcode != 7 || s.World == nil || s.World.BattleMode != "auto_attack" {
+	if inst.Opcode != 7 || s.World == nil || s.World.BattleMode != "auto_attack" && s.World.BattleMode != "fast_verify" {
 		return false, nil
 	}
 	source, ok := r.source.(CombatSource)
 	if !ok {
 		return true, fmt.Errorf("numeric combat source is missing")
 	}
-	remaining := r.options.MaxSteps - s.ExecutedSteps - s.PlayerSubsteps - s.WorldTicks - s.AutoSubsteps - s.CombatWork - 1
+	remaining := r.options.MaxSteps - s.ExecutedSteps - s.PlayerSubsteps - s.WorldTicks - s.AutoSubsteps - s.CombatWork - s.MediaWork - 1
 	if remaining < 1 {
 		return true, fmt.Errorf("no shared instruction budget remains for battle")
 	}
@@ -88,6 +93,10 @@ func (r *Runner) evaluateCombat(s *State, step *TraceStep, inst Instruction, inp
 	s.CombatWork += execution.Work
 	s.InputIndex += execution.InputsConsumed
 	s.TextBytes += text
+	if execution.DialogEnded {
+		s.DialogPlayingRNG = false
+		s.CurEquipPart = -1
+	}
 	if execution.Context != nil {
 		s.LastEventID = execution.Context.LastEventID
 		s.ScriptSuccess = execution.Context.ScriptSuccess

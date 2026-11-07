@@ -46,6 +46,9 @@ func (e *Engine) applyScriptResult(s *Snapshot, result ScriptResult) error {
 		}
 		s.MagicBaseDamage[id] = damage
 	}
+	if err := e.applyEnemyTopology(s, result.EnemyTopology); err != nil {
+		return err
+	}
 	if result.ForcedOutcome != nil {
 		switch *result.ForcedOutcome {
 		case Ongoing: // A running-phase result does not manufacture an ending.
@@ -81,7 +84,13 @@ func (e *Engine) endTurn(s *Snapshot, r *Report) error {
 			}
 		}
 	}
-	for i := range s.Enemies {
+	for enemySlot := 0; enemySlot <= s.MaxEnemySlot; enemySlot++ {
+		i := enemyIndexAtSlot(s, enemySlot)
+		if i < 0 {
+			continue
+		}
+		// Classic poison callbacks and status ticks inspect every fixed slot,
+		// including retained fields after its active object ID was cleared.
 		for slot := range s.Enemies[i].Poisons {
 			poison := s.Enemies[i].Poisons[slot]
 			if poison.ID == 0 {
@@ -102,9 +111,9 @@ func (e *Engine) endTurn(s *Snapshot, r *Report) error {
 	}
 	// Mark defeats before callbacks for the next round, but defer defeat of
 	// the party: a turn-start callback may revive a player.
-	for i := range s.Enemies {
+	for _, i := range enemyIndexes(s) {
 		x := &s.Enemies[i]
-		if x.HP == 0 && !x.Rewarded {
+		if enemyPresent(*x) && x.HP == 0 {
 			x.Rewarded = true
 			s.Earned.Experience += uint32(x.Enemy.Exp)
 			s.Earned.Cash += uint32(x.Enemy.Cash)

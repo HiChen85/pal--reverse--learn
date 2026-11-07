@@ -73,8 +73,14 @@ func New(c Config) (*Engine, error) {
 			return nil, fmt.Errorf("palcombat: invalid inventory object %d amount %d", id, n)
 		}
 	}
-	for slot, id := range c.Tables.EnemyTeams[c.TeamID] {
-		if id == 0 || id == 0xffff {
+	runtimeSlot := 0
+	for _, id := range c.Tables.EnemyTeams[c.TeamID] {
+		if id == 0xffff {
+			continue
+		}
+		slot := runtimeSlot
+		runtimeSlot++
+		if id == 0 {
 			continue
 		}
 		if int(id) >= len(e.objects) {
@@ -91,6 +97,7 @@ func New(c Config) (*Engine, error) {
 		o := e.objectAt(id)
 		e.state.Enemies = append(e.state.Enemies, EnemyState{Slot: slot, ObjectID: id, Enemy: x, HP: int(x.HP), TurnStart: o[2], BattleEnd: o[3], Ready: o[4]})
 	}
+	e.state.MaxEnemySlot = runtimeSlot - 1
 	if len(e.state.Enemies) == 0 {
 		return nil, fmt.Errorf("palcombat: imported enemy team is empty")
 	}
@@ -139,7 +146,7 @@ func (e *Engine) Submit(actions []Action) (Report, error) {
 		s.Party[i].Defending = false
 	}
 	if !s.Started {
-		if err = e.turnStart(&s, &r); err != nil {
+		if err = e.preBattle(&s, &r); err != nil {
 			return r, err
 		}
 		s.Started = true
@@ -161,13 +168,13 @@ func (e *Engine) Submit(actions []Action) (Report, error) {
 				continue
 			}
 			err = e.playerAction(&s, q.index, commands[s.Party[q.index].Role.ID], &r)
-		} else if s.Enemies[q.index].HP > 0 && s.HidingTime == 0 {
+		} else if enemyPresent(s.Enemies[q.index]) && s.Enemies[q.index].HP > 0 && s.HidingTime == 0 {
 			x := &s.Enemies[q.index]
 			_, err = e.runScript(&s, ScriptRequest{Hook: "enemy ready", ObjectID: x.ObjectID, Entry: x.Ready, Invoker: uint16(x.Slot), Target: Target{Side: Enemy, Index: q.index}}, &r, &x.Ready)
 			if err == nil {
 				e.collect(&s, &r)
 			}
-			if err == nil && s.Outcome == Ongoing && s.Enemies[q.index].HP > 0 {
+			if err == nil && s.Outcome == Ongoing && enemyPresent(s.Enemies[q.index]) && s.Enemies[q.index].HP > 0 {
 				err = e.enemyAction(&s, q.index, &r)
 			}
 		}
@@ -294,7 +301,7 @@ func (e *Engine) validate(actions []Action) (map[uint16]Action, error) {
 		}
 	}
 	for _, x := range e.state.Enemies {
-		if x.HP <= 0 {
+		if !enemyPresent(x) || x.HP <= 0 {
 			continue
 		}
 		for _, hook := range []struct {
@@ -327,7 +334,7 @@ func (e *Engine) validate(actions []Action) (map[uint16]Action, error) {
 }
 
 func (e *Engine) livingEnemy(t Target) error {
-	if t.Side != Enemy || t.Index < 0 || t.Index >= len(e.state.Enemies) || e.state.Enemies[t.Index].HP <= 0 {
+	if t.Side != Enemy || t.Index < 0 || t.Index >= len(e.state.Enemies) || !enemyPresent(e.state.Enemies[t.Index]) || e.state.Enemies[t.Index].HP <= 0 {
 		return fmt.Errorf("palcombat: target must be a living imported enemy")
 	}
 	return nil
@@ -340,8 +347,9 @@ type queueEntry struct {
 
 func (e *Engine) queue(s Snapshot, commands map[uint16]Action, r *Report) ([]queueEntry, error) {
 	q := make([]queueEntry, 0, len(s.Enemies)*2+len(s.Party))
-	for i, x := range s.Enemies {
-		if x.HP <= 0 {
+	for _, i := range enemyIndexes(&s) {
+		x := s.Enemies[i]
+		if !enemyPresent(x) || x.HP <= 0 {
 			continue
 		}
 		n := 1
@@ -476,7 +484,7 @@ func (e *Engine) playerAction(s *Snapshot, i int, a Action, r *Report) error {
 			return &UnsupportedError{Feature: "attack-all equipment/role"}
 		}
 		target := a.Target.Index
-		if target < 0 || target >= len(s.Enemies) || s.Enemies[target].HP <= 0 {
+		if target < 0 || target >= len(s.Enemies) || !enemyPresent(s.Enemies[target]) || s.Enemies[target].HP <= 0 {
 			target = retarget(*s, target)
 			if target < 0 {
 				return nil
@@ -532,7 +540,7 @@ func (e *Engine) playerAction(s *Snapshot, i int, a Action, r *Report) error {
 	case Flee:
 		var total uint16
 		for _, x := range s.Enemies {
-			if x.HP > 0 {
+			if enemyPresent(x) && x.HP > 0 {
 				total += x.Enemy.Dexterity + (x.Enemy.Level+6)*4
 			}
 		}
@@ -561,12 +569,14 @@ func retarget(s Snapshot, begin int) int {
 	if len(s.Enemies) == 0 {
 		return -1
 	}
-	if begin < 0 || begin >= len(s.Enemies) {
-		begin = 0
+	beginSlot := 0
+	if begin >= 0 && begin < len(s.Enemies) {
+		beginSlot = s.Enemies[begin].Slot
 	}
-	for n := 0; n < len(s.Enemies); n++ {
-		i := (begin + n) % len(s.Enemies)
-		if s.Enemies[i].HP > 0 {
+	for n := 0; n <= s.MaxEnemySlot; n++ {
+		slot := (beginSlot + n) % (s.MaxEnemySlot + 1)
+		i := enemyIndexAtSlot(&s, slot)
+		if i >= 0 && enemyPresent(s.Enemies[i]) && s.Enemies[i].HP > 0 {
 			return i
 		}
 	}
@@ -729,8 +739,11 @@ func (e *Engine) collect(s *Snapshot, r *Report) {
 		return
 	}
 	alive := false
-	for i := range s.Enemies {
+	for _, i := range enemyIndexes(s) {
 		x := &s.Enemies[i]
+		if !enemyPresent(*x) {
+			continue
+		}
 		if x.HP > 0 {
 			alive = true
 		} else if !x.Rewarded {

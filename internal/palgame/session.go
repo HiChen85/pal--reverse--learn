@@ -19,6 +19,9 @@ type SessionOptions struct {
 	BattleSeed         uint64
 	Assets             *palasset.SpriteCatalog
 	Maps               *palasset.MapCatalog
+	Palettes           *palasset.PaletteCatalog
+	RNG                *palasset.RNGCatalog
+	FBP                *palasset.FBPCatalog
 	RedactText         bool
 	Scene              uint16
 	AssumeSceneEntered bool
@@ -33,15 +36,19 @@ type SessionSnapshot struct {
 	Actions         int                 `json:"actions"`
 }
 type Session struct {
-	runtime        *paldata.RuntimeTables
-	maps           *palasset.MapCatalog
-	lastInvocation *Invocation
-	initialization Initialization
-	assets         *palasset.SpriteCatalog
-	redactText     bool
-	game           *paldata.Game
-	current        SessionSnapshot
-	maxSteps       int
+	runtime              *paldata.RuntimeTables
+	maps                 *palasset.MapCatalog
+	palettes             *palasset.PaletteCatalog
+	rng                  *palasset.RNGCatalog
+	fbp                  *palasset.FBPCatalog
+	lastInvocation       *Invocation
+	initialization       Initialization
+	initialAssumeEntered bool
+	assets               *palasset.SpriteCatalog
+	redactText           bool
+	game                 *paldata.Game
+	current              SessionSnapshot
+	maxSteps             int
 }
 
 type Invocation struct {
@@ -61,7 +68,7 @@ func (s *Session) LastInvocation() *Invocation {
 }
 
 func (s *Session) source() Source {
-	return Source{Runtime: s.runtime, Game: s.game, Assets: s.assets, Maps: s.maps, RedactText: s.redactText}
+	return Source{Runtime: s.runtime, Game: s.game, Assets: s.assets, Maps: s.maps, Palettes: s.palettes, RNG: s.rng, FBP: s.fbp, RedactText: s.redactText}
 }
 
 func (s *Session) runnerOptions() palflow.Options {
@@ -100,7 +107,7 @@ func NewSession(g *paldata.Game, r *paldata.RuntimeTables, options SessionOption
 	if world.BattleMode == "" {
 		world.BattleMode = "auto_attack"
 	}
-	if world.BattleMode != "auto_attack" && world.BattleMode != "disabled" {
+	if world.BattleMode != "auto_attack" && world.BattleMode != "fast_verify" && world.BattleMode != "disabled" {
 		return nil, errors.New("unsupported battle policy")
 	}
 	world.BattleRandomState = options.BattleSeed
@@ -114,7 +121,7 @@ func NewSession(g *paldata.Game, r *paldata.RuntimeTables, options SessionOption
 			return nil, err
 		}
 	}
-	return &Session{runtime: r, maps: options.Maps, initialization: initial, game: g, assets: options.Assets, redactText: options.RedactText, maxSteps: limit, current: SessionSnapshot{World: world, LastEventID: initial.LastEventID, ScriptSuccess: initial.ScriptSuccess, IdleFrames: InitialIdleFrames(g), NeedsSceneEnter: !options.AssumeSceneEntered}}, nil
+	return &Session{runtime: r, maps: options.Maps, palettes: options.Palettes, rng: options.RNG, fbp: options.FBP, initialization: initial, initialAssumeEntered: options.AssumeSceneEntered, game: g, assets: options.Assets, redactText: options.RedactText, maxSteps: limit, current: SessionSnapshot{World: world, LastEventID: initial.LastEventID, ScriptSuccess: initial.ScriptSuccess, IdleFrames: InitialIdleFrames(g), NeedsSceneEnter: !options.AssumeSceneEntered}}, nil
 }
 
 // Initialization returns detached bootstrap evidence, including mutable callback
