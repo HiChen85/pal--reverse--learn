@@ -6,6 +6,7 @@ import (
 	"slices"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/HiChen85/pal--reverse--learn/internal/palflow"
 	"github.com/HiChen85/pal--reverse--learn/internal/palgame"
@@ -99,6 +100,15 @@ func (a *workbench) originalPlayView(c *ui.Context) {
 		}
 	})
 	ui.Text(c, "方向键每次推进一个世界帧并移动16/8像素；调查按当前位置和朝向搜索。缺少地图、待进入场景或脚本阻塞会回滚整帧；下方事件 ID 调用只用于诊断。").FontSize(12).TextColor(t.TextMuted)
+	a.originalItemUseView(c, s)
+	a.originalEquipmentView(c, s)
+}
+
+func (a *workbench) originalItemUseView(c *ui.Context, s palgame.SessionSnapshot) {
+	o := a.original
+	if o.changedSource() {
+		return
+	}
 	items := []string{}
 	for id, count := range s.World.Inventory {
 		if count > 0 && s.World.Objects[id][6]&1 != 0 {
@@ -126,24 +136,75 @@ func (a *workbench) originalPlayView(c *ui.Context) {
 			itemNames[i] = name + "（装备）"
 		}
 	}
-	roles, roleNames := []string{}, []string{}
-	id, _ := strconv.ParseUint(o.item, 10, 16)
-	if s.World.Objects[uint16(id)][6]&16 != 0 {
-		roles, roleNames = []string{"65535"}, []string{"全体队员"}
-	} else {
-		for _, id := range s.World.PartyRoles {
-			roles = append(roles, strconv.Itoa(int(id)))
-			roleNames = append(roleNames, o.originalWord(s.World.Roles[id][3]))
-		}
-	}
-	o.itemRole = validSelection(o.itemRole, roles)
 	ui.Row(c).Gap(8).Children(func() {
 		selectNamed(c.Key("original-use-item"), &o.item, items, itemNames).Label("物品（数量）").Width(200)
+		roles, roleNames := []string{}, []string{}
+		if id, err := strconv.ParseUint(o.item, 10, 16); err == nil {
+			if s.World.Objects[uint16(id)][6]&16 != 0 {
+				roles, roleNames = []string{"65535"}, []string{"全体队员"}
+			} else {
+				roles, roleNames = o.originalRoleChoices(s.World, s.World.PartyRoles)
+			}
+		}
+		o.itemRole = validSelection(o.itemRole, roles)
 		selectNamed(c.Key("original-item-role"), &o.itemRole, roles, roleNames).Label("使用目标").Width(160)
-		if ui.Button(c.Key("original-item-submit"), "使用物品").Disabled(o.changedSource() || len(items) == 0).Clicked() {
-			a.report(o.runUseItem(), "物品使用动作已提交")
+		w := s.World
+		disabled := o.item == "" || o.itemRole == "" || s.NeedsSceneEnter || w.SceneLoadPending || w.SceneChanged || w.InBattle
+		if ui.Button(c.Key("original-item-submit"), "使用物品").Disabled(disabled).Clicked() {
+			a.report(o.runItemAction("use_item", o.item, o.itemRole), "物品使用动作已提交")
 		}
 	})
+}
+
+func (a *workbench) originalEquipmentView(c *ui.Context, s palgame.SessionSnapshot) {
+	o := a.original
+	var choices map[uint16][]uint16
+	if !o.changedSource() {
+		choices = s.EquipmentChoices()
+	}
+	ids := make([]int, 0, len(choices))
+	for id := range choices {
+		ids = append(ids, int(id))
+	}
+	sort.Ints(ids)
+	items, names := make([]string, 0, len(ids)), make([]string, 0, len(ids))
+	for _, id := range ids {
+		items = append(items, strconv.Itoa(id))
+		names = append(names, o.originalWord(uint16(id)))
+	}
+	o.equipItem = validSelection(o.equipItem, items)
+	ui.Row(c).Gap(8).Children(func() {
+		selectNamed(c.Key("original-equip-item"), &o.equipItem, items, names).Label("装备物品").Width(200)
+		item, _ := strconv.ParseUint(o.equipItem, 10, 16)
+		roles, roleNames := o.originalRoleChoices(s.World, choices[uint16(item)])
+		o.equipRole = validSelection(o.equipRole, roles)
+		selectNamed(c.Key("original-equip-role"), &o.equipRole, roles, roleNames).Label("装备目标").Width(160)
+		if ui.Button(c.Key("original-equip-submit"), "装备").Disabled(o.equipItem == "" || o.equipRole == "").Clicked() {
+			a.report(o.runItemAction("equip_item", o.equipItem, o.equipRole), "装备动作已提交")
+		}
+	})
+	for _, role := range s.World.PartyRoles {
+		raw := s.World.Roles[role]
+		equipped := make([]string, 0, len(raw[11:17]))
+		for _, item := range raw[11:17] {
+			if item != 0 {
+				equipped = append(equipped, o.originalWord(item))
+			}
+		}
+		if len(equipped) == 0 {
+			equipped = append(equipped, "无")
+		}
+		ui.Text(c.Key(fmt.Sprintf("original-equipped-role-%d", role)), fmt.Sprintf("当前装备 · %s：%s", o.originalWord(raw[3]), strings.Join(equipped, "、"))).FontSize(12)
+	}
+}
+
+func (o *originalData) originalRoleChoices(w *palflow.WorldState, roles []uint16) ([]string, []string) {
+	ids, names := make([]string, 0, len(roles)), make([]string, 0, len(roles))
+	for _, role := range roles {
+		ids = append(ids, strconv.Itoa(int(role)))
+		names = append(names, o.originalWord(w.Roles[role][3]))
+	}
+	return ids, names
 }
 
 func (o *originalData) originalWord(id uint16) string {
@@ -153,40 +214,48 @@ func (o *originalData) originalWord(id uint16) string {
 	return fmt.Sprintf("未命名 %d", id)
 }
 
-func (o *originalData) runUseItem() error {
-	if o.changedSource() || o.session == nil {
+func (o *originalData) runItemAction(kind, itemSelection, roleSelection string) error {
+	if o.changedSource() || !o.useSession || o.session == nil {
 		return errors.New("请先读取来源并建立会话")
 	}
-	item, err := strconv.ParseUint(o.item, 10, 16)
+	item, err := strconv.ParseUint(itemSelection, 10, 16)
 	if err != nil || item == 0 {
 		return errors.New("请选择物品 ID")
 	}
-	role, err := strconv.ParseUint(o.itemRole, 10, 16)
+	role, err := strconv.ParseUint(roleSelection, 10, 16)
 	if err != nil {
-		return errors.New("请选择人物 ID；全体物品选择65535")
+		return errors.New("请选择有效的目标角色")
 	}
 	inputs, err := decodeOriginalInputs(o.inputsJSON)
 	if err != nil {
 		return err
 	}
 	before := o.session.Snapshot()
-	report, runErr := o.session.UseItem(uint16(item), uint16(role), inputs)
-	after := o.session.Snapshot()
 	i, target, checkpoint := uint16(item), uint16(role), o.checkpoint
-	record := originalInvocation{ActionIntent: originalActionIntent{Kind: "use_item", Item: &i, TargetRole: &target, Inputs: inputs, SceneNumber: int(before.World.Scene)}, Kind: "use_item", Mode: "session", SceneNumber: int(before.World.Scene), Report: report, Checkpoint: &checkpoint, SessionBefore: &before, SessionAfter: &after, SessionCommitted: runErr == nil && after.Actions > before.Actions}
+	var report palflow.Report
+	switch kind {
+	case "use_item":
+		report, err = o.session.UseItem(i, target, inputs)
+	case "equip_item":
+		report, err = o.session.EquipItem(i, target, inputs)
+	default:
+		return errors.New("未知物品操作")
+	}
+	after := o.session.Snapshot()
+	record := originalInvocation{ActionIntent: originalActionIntent{Kind: kind, Item: &i, TargetRole: &target, Inputs: inputs, SceneNumber: int(before.World.Scene)}, Kind: kind, Mode: "session", SceneNumber: int(before.World.Scene), Report: report, Checkpoint: &checkpoint, SessionBefore: &before, SessionAfter: &after, SessionCommitted: err == nil && after.Actions > before.Actions}
 	if actual := o.session.LastInvocation(); actual != nil {
 		record.Invoked = true
 		record.Request, record.Options = &actual.Request, &actual.Options
 	}
-	if runErr != nil {
-		record.Error = runErr.Error()
+	if err != nil {
+		record.Error = err.Error()
 	}
 	o.history = append(o.history, record)
 	if len(o.history) > 16 {
 		o.history = o.history[len(o.history)-16:]
 	}
 	o.updateViewport()
-	return runErr
+	return err
 }
 
 func (a *workbench) originalControlReportView(c *ui.Context, record originalInvocation) {

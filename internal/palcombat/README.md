@@ -73,8 +73,15 @@ FLOAT subtraction truncates remaining health before WORD wrapping. Negative
 FLOAT-to-WORD conversion is not a portable C guarantee: Go defines an explicit
 modulo compatibility rule matching the retained native-reference observations.
 
+The engine interprets the base damage word as a signed value. With a zero or
+negative base, the cast still runs its scripts and normal action bookkeeping.
+Only a positive base runs the damage formula. Enemy casts read the base again
+after the callbacks because a script can change it. Callbacks carry the acting
+side separately from the target, so nested scripts can distinguish an enemy
+action from a player action or a round hook.
+
 Confused/puppet actions, thrown items, cooperative magic, trance/player-summon
-magic, negative magic damage and zero imported enemy HP fail explicitly when
+magic, negative damage computed by the enemy formula, and zero imported enemy HP fail explicitly when
 encountered. Poison callbacks run at turn end in party/slot then enemy/slot order,
 including source continuation behavior after a cure. Hiding skips enemy turns,
 counts down and gates turn-start callbacks. These hooks share the transaction

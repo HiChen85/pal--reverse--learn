@@ -303,7 +303,7 @@ func executeJourneyDetail(session *palgame.Session, spec journeyRoute, routeDige
 	}
 	report.ExecutionPolicy = journeyPolicy{VM: session.ExecutionOptions(), RandomMode: before.World.RandomMode, BattleMode: before.World.BattleMode, InitialRandomState: before.World.BattleRandomState}
 	report.ExecutionPolicy.BattleSimplifications = palgame.BattlePolicyNotes(before.World.BattleMode)
-	report.Scope = "One continuous new-game Session using imported local resources. enter runs scene OnEnter; move/interact use modeled frame order, collision and search; use_item executes the original item script. Explicit trigger does not establish spatial reachability. Battles use the recorded Go numeric policy and seeded model RNG; battle_simplifications describes any verification-only changes. Original-runtime parity, a complete main story and all side quests are not verified."
+	report.Scope = "One continuous new-game Session using imported local resources. enter runs scene OnEnter; move/interact use modeled frame order, collision and search; use_item and equip_item execute the selected item's OnUse and OnEquip callbacks. Explicit trigger does not establish spatial reachability. Battles use the recorded Go numeric policy and seeded model RNG; battle_simplifications describes any verification-only changes. Original-runtime parity, a complete main story and all side quests are not verified."
 	if compact {
 		report.TraceDetail = "compact"
 		report.TraceStateEncoding = "Successful actions retain input, actual message IDs, work and before/after SHA-256. Full per-step trace and deltas are omitted by request; intermediate worlds require replay of the hash-bound route. Failed actions retain full available evidence. Final includes complete snapshot."
@@ -315,14 +315,17 @@ func executeJourneyDetail(session *palgame.Session, spec journeyRoute, routeDige
 		var messages []uint16
 		var actionErr error
 		switch action.Type {
-		case "enter", "trigger", "use_item":
+		case "enter", "trigger", "use_item", "equip_item":
 			var trace palflow.Report
-			if action.Type == "enter" {
+			switch action.Type {
+			case "enter":
 				trace, actionErr = session.Enter(action.Inputs)
-			} else if action.Type == "trigger" {
+			case "trigger":
 				trace, actionErr = session.Trigger(*action.Event, action.Inputs)
-			} else {
+			case "use_item":
 				trace, actionErr = session.UseItem(*action.Item, *action.TargetRole, action.Inputs)
+			case "equip_item":
+				trace, actionErr = session.EquipItem(*action.Item, *action.TargetRole, action.Inputs)
 			}
 			messages = trace.DialogueIDs
 			trace.State.World = nil
@@ -798,13 +801,16 @@ func checkJourneyRouteMode(spec journeyRoute, data []byte, requireNewGame bool) 
 		if action.Inputs == nil {
 			return fmt.Errorf("journey action %d 必须明确指定 inputs 数组", i+1)
 		}
-		if action.Type != "use_item" && (action.Item != nil || action.TargetRole != nil) {
-			return fmt.Errorf("journey action %d 仅 use_item 接受 item/target_role", i+1)
+		if action.Type != "use_item" && action.Type != "equip_item" && (action.Item != nil || action.TargetRole != nil) {
+			return fmt.Errorf("journey action %d 仅 use_item 和 equip_item 接受 item/target_role", i+1)
 		}
 		switch action.Type {
-		case "use_item":
+		case "use_item", "equip_item":
 			if action.Item == nil || *action.Item == 0 || action.TargetRole == nil || action.Event != nil || action.Direction != nil {
 				return fmt.Errorf("journey action %d 需要 item/target_role 且不接受 event/direction", i+1)
+			}
+			if action.Type == "equip_item" && *action.TargetRole >= paldata.RoleCount {
+				return fmt.Errorf("journey action %d equip_item 需要单一 target_role=0..%d", i+1, paldata.RoleCount-1)
 			}
 		case "enter", "interact":
 			if action.Event != nil || action.Direction != nil {

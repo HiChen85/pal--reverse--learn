@@ -46,6 +46,7 @@ type originalData struct {
 	checkpoint                                    originalCheckpoint
 	scene, event                                  string
 	item, itemRole                                string
+	equipItem, equipRole                          string
 	inputsJSON, exportPath                        string
 	savePath, saveResult                          string
 	lastEvent                                     float64
@@ -113,6 +114,7 @@ func (o *originalData) load() error {
 	o.loadedLayout = o.layout
 	o.scene = "1"
 	o.event = ""
+	o.clearItemSelections()
 	o.enterPC = map[int]uint16{}
 	o.triggerPC = map[int]uint16{}
 	o.history = nil
@@ -169,6 +171,11 @@ func (o *originalData) load() error {
 func (o *originalData) changedSource() bool {
 	return o.game != nil && (o.directory != o.loadedDirectory || o.encoding != o.loadedEncoding || o.layout != o.loadedLayout)
 }
+
+func (o *originalData) clearItemSelections() {
+	o.item, o.itemRole, o.equipItem, o.equipRole = "", "", "", ""
+}
+
 func (o *originalData) sceneIndex() (int, error) {
 	if o.game == nil {
 		return 0, errors.New("请先读取原版数据目录")
@@ -201,6 +208,7 @@ func (o *originalData) resetSession() error {
 	o.checkpoint = originalCheckpoint{Scene: uint16(index + 1), AssumeSceneEntered: o.assumeEntered}
 	o.history = nil
 	o.event = ""
+	o.clearItemSelections()
 	o.updateViewport()
 	return nil
 }
@@ -558,6 +566,7 @@ func (a *workbench) originalView(c *ui.Context) {
 	}
 	ui.Text(c, fmt.Sprintf("已读取: %s · %s / %s · 场景 %d，事件 %d，脚本 %d，对话 %d，词条 %d，对象 %d", o.loadedDirectory, o.loadedEncoding, o.loadedLayout, len(o.game.Scenes), len(o.game.Events), len(o.game.Scripts), len(o.game.Messages), len(o.game.Words), len(o.game.RawObjects))).FontSize(12)
 	if o.changedSource() {
+		o.clearItemSelections()
 		ui.Text(c, "目录、编码或布局已改变；当前数据显示上次导入内容，请重新读取。").TextColor(t.Warning)
 	}
 	if o.assets != nil {

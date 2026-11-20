@@ -96,6 +96,8 @@ type ScriptTransaction interface {
 type ScriptRequest struct {
 	Hook            string
 	ObjectID, Entry uint16
+	// Actor is the side taking an action. It is empty outside actions.
+	Actor Side
 	// Invoker is a role ID for party scripts, a fixed runtime slot for
 	// enemy scripts, and 0xffff for an all-target item/offensive magic.
 	Invoker uint16
@@ -284,5 +286,6 @@ type Engine struct {
 	battlefield   uint16
 	callbacks     Callbacks
 	transaction   ScriptTransaction
+	actionSide    Side
 	randomFailure error
 }

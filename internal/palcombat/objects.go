@@ -37,10 +37,8 @@ func (e *Engine) magicSpec(id uint16) (paldata.Magic, error) {
 	if m.Type > 5 {
 		return m, &UnsupportedError{Feature: "trance, summon, or unknown magic type", ObjectID: id}
 	}
-	if int16(m.BaseDamage) < 0 {
-		return m, &UnsupportedError{Feature: "negative magic base damage", ObjectID: id}
-	}
-	if m.BaseDamage > 0 && int(e.battlefield) >= len(e.tables.Battlefields) {
+	// The classic action tests the stored damage word as a signed SHORT.
+	if int16(m.BaseDamage) > 0 && int(e.battlefield) >= len(e.tables.Battlefields) {
 		return m, fmt.Errorf("palcombat: battlefield %d outside imported table", e.battlefield)
 	}
 	return m, nil
@@ -169,7 +167,7 @@ func (e *Engine) objectAction(s *Snapshot, actor int, a Action, r *Report) error
 		if err != nil {
 			return err
 		}
-		if m.BaseDamage > 0 && o[6]&magicToEnemy != 0 {
+		if int16(m.BaseDamage) > 0 && o[6]&magicToEnemy != 0 {
 			targets := []int{target.Index}
 			if a.Target.Side == All {
 				targets = nil
@@ -263,7 +261,13 @@ func (e *Engine) enemyMagic(s *Snapshot, actor, target int, r *Report) error {
 			return err
 		}
 	}
-	if m.BaseDamage == 0 {
+	// Enemy damage is independent of use-script success and reads the base
+	// after both script hooks have had a chance to change it.
+	m, err = e.magicSpec(x.Enemy.Magic)
+	if err != nil {
+		return err
+	}
+	if int16(m.BaseDamage) <= 0 {
 		return nil
 	}
 	if m.Type != 0 {

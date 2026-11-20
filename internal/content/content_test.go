@@ -190,8 +190,8 @@ func TestRepositoryExtensionExample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(ext.Characters) != 0 || ext.Start != "river-arrival" {
-		t.Fatal("example must demonstrate base character references and independent entry")
+	if len(ext.Characters) == 0 || ext.Start != "river-arrival" {
+		t.Fatal("example must add an original character and an independent entry")
 	}
 	merged, err := Merge(Demo(), ext)
 	if err != nil {

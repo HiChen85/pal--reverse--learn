@@ -55,6 +55,14 @@ go run ./cmd/paltool validate combined.json
 
 也可在 UI 的扩展包路径中输入 `examples/chapter-two.json`，点击“追加章节”，保存合并内容包。扩展可以引用基础包人物和节点，不能覆盖同 ID 的基础记录，合并失败不修改工作区。独立扩展不一定能通过单独 `validate`，应通过与基础包合并进行校验。
 
+原创续章《沿河寻名》也可以独立试玩：
+
+```sh
+go run ./cmd/paltool play examples/chapter-two.json
+```
+
+在渡口向闻禾打听三盏灯，可解锁战斗后的搭桥结局。直接帮忙拉缆索也能继续，到驿站交付名单。战斗中可用 `item reed-balm` 给当前行动者恢复生命，也可用 `save` 和 `load` 保存及恢复进度。
+
 合并保留基础包默认入口；第二章入口是 `river-arrival`。在试玩下拉选择该入口可独立预览。若要保持前章 flags 连贯进入后续故事，在剧情编辑器中将第一章末节点 `ending` 的“后续节点”设为 `river-arrival` 并应用；从基础默认入口重新运行即可连续推进。独立“从入口开始”会重置 flags 与初始物品。
 
 内容文件 `schema_version=1`，使用稳定字符串 ID；条件选项的 `require_flags` 与节点 `set_flags` 可在完整 JSON 编辑。缺失 flag 视为 false，条件全部匹配才显示选项。允许作者设计循环；所有选择都被条件隐藏时需要修改内容，不能强制跳过。

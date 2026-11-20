@@ -44,6 +44,7 @@ func (s Source) RunBattle(world *palflow.WorldState, team uint16, boss bool, inp
 		return result, err
 	}
 	w := palflow.CloneWorld(world)
+	w.BattleEnemyMoving = false
 	context := palflow.CombatContext{ScriptSuccess: true}
 	if s.battleContext != nil {
 		context = *s.battleContext
@@ -445,6 +446,11 @@ func (tx *combatTransaction) Run(request palcombat.ScriptRequest, snapshot *palc
 	if err := snapshotToCombatWorld(tx.world, *snapshot); err != nil {
 		return result, err
 	}
+	previous := tx.world.BattleEnemyMoving
+	tx.world.BattleEnemyMoving = request.Actor == palcombat.Enemy
+	// Restore on the final world because Trace can replace the callback copy.
+	defer func() { tx.world.BattleEnemyMoving = previous }()
+
 	remaining := tx.owner.options.MaxSteps - tx.owner.work
 	if remaining < 0 || remaining == 0 && request.Entry != 0 {
 		return result, fmt.Errorf("combat script %04x exhausted the shared instruction budget", request.Entry)

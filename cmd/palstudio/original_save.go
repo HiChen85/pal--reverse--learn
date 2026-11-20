@@ -90,6 +90,7 @@ func (o *originalData) runSessionFile(kind string) (err error) {
 	o.useSession = true
 	o.scene = fmt.Sprint(next.Snapshot().World.Scene)
 	o.event = ""
+	o.clearItemSelections()
 	o.inputsJSON = "[]"
 	o.maxSteps = float64(next.ExecutionOptions().MaxSteps)
 	checkpoint := next.InitialCheckpoint()

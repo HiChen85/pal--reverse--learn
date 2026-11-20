@@ -3,7 +3,17 @@
   "id": "river-names",
   "title": "沿河寻名 · 独立扩展章",
   "start": "river-arrival",
-  "characters": [],
+  "characters": [
+    {
+      "id": "wen-he",
+      "name": "闻禾",
+      "max_hp": 110,
+      "max_mp": 12,
+      "attack": 19,
+      "defense": 10,
+      "speed": 12
+    }
+  ],
   "items": [
     {
       "id": "river-lantern",
@@ -11,29 +21,92 @@
       "description": "纸灯上的字迹仍在。回复十点灵力。",
       "heal_hp": 0,
       "restore_mp": 10
+    },
+    {
+      "id": "reed-balm",
+      "name": "苇叶膏",
+      "description": "渡工用来敷苔须割伤的药膏。回复三十点生命。",
+      "heal_hp": 30,
+      "restore_mp": 0
     }
   ],
-  "encounters": [],
+  "encounters": [
+    {
+      "id": "ferry-line",
+      "enemies": [
+        {
+          "id": "rope-moss",
+          "name": "缠索苔",
+          "max_hp": 92,
+          "max_mp": 0,
+          "attack": 18,
+          "defense": 8,
+          "speed": 10
+        }
+      ]
+    }
+  ],
   "nodes": [
     {
       "id": "river-arrival",
-      "speaker": "lin-yue",
-      "text": "我们带着旧簿来到河岸。每到傍晚，河对岸便有人放灯，却没有渡船。",
+      "text": "暮色里，三盏渡灯搁在浅滩。我们循着旧簿里的名字来到河边，见渡工闻禾正从水里往外拖一条松脱的缆索。",
       "next": "river-choice"
     },
     {
       "id": "river-choice",
-      "speaker": "su-qing",
-      "text": "灯上写着旧簿中的名字。这不是告别，而是一封约定。",
+      "speaker": "wen-he",
+      "text": "灯上的人名是我抄的。迁去西滩的几户人家想在赶集日回来，可昨夜漂来的倒木压住了缆索。我得在天黑前把它收上来。",
       "choices": [
-        {"text": "沿河寻找放灯的人", "next": "river-end"},
-        {"text": "回看前章留下的线索", "next": "ending"}
+        {
+          "text": "问闻禾为何只放三盏灯",
+          "next": "river-lampkeeper",
+          "require_flags": {"knows-river-signal": false}
+        },
+        {"text": "去帮闻禾把缆索拉上岸", "next": "river-sluice"}
+      ]
+    },
+    {
+      "id": "river-lampkeeper",
+      "speaker": "wen-he",
+      "text": "从前渡船停航，我娘就把三盏灯挂上旧缆桩。西滩的人一看见，便抬桥板来，两边一起搭浮桥。灯若在水面上，他们只当是我在寄信。",
+      "set_flags": {"knows-river-signal": true},
+      "next": "river-choice"
+    },
+    {
+      "id": "river-sluice",
+      "text": "倒木下钻出一团缠索苔。缆索才被拉起半尺，苔须就缠上木桩，将缆索往深水里拽。",
+      "encounter": "ferry-line",
+      "next": "river-signal"
+    },
+    {
+      "id": "river-signal",
+      "speaker": "wen-he",
+      "text": "缆索收回来了，渡船的舵却还得修。趁驿道没黑，把名单送去驿站吧。等船修好，驿差就能挨家去报信。",
+      "set_flags": {"followed-lanterns": true},
+      "choices": [
+        {"text": "沿驿道送交名单", "next": "river-end"},
+        {
+          "text": "把三盏渡灯挂上旧缆桩",
+          "next": "river-beacons",
+          "require_flags": {"knows-river-signal": true}
+        }
       ]
     },
     {
       "id": "river-end",
-      "text": "河风吹过，最后一盏灯停在芦苇旁。第三章的入口，可以从这里续写。",
-      "set_flags": {"followed-lanterns": true}
+      "text": "驿差照着名单抄了几份告示。三天后，修好的渡船开出第一趟，赶早集的人踩着还湿的跳板，提起了久违的地名。",
+      "set_flags": {"river-names-filed": true}
+    },
+    {
+      "id": "river-beacons",
+      "speaker": "wen-he",
+      "text": "你看，西滩也挂起了灯！我们把缆索系紧，他们正沿浅滩抬桥板过来。",
+      "next": "river-bridge-end"
+    },
+    {
+      "id": "river-bridge-end",
+      "text": "天黑前，最后一块桥板扣上缆索。闻禾把旧簿摊在渡棚里，过桥的人停下来，亲手在自家名字旁添上新住址。",
+      "set_flags": {"river-crossing-restored": true}
     }
   ]
 }

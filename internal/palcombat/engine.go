@@ -432,6 +432,10 @@ func (e *Engine) initiative(speed uint16, reason string, r *Report) (int, error)
 }
 
 func (e *Engine) playerAction(s *Snapshot, i int, a Action, r *Report) error {
+	previous := e.actionSide
+	e.actionSide = Party
+	defer func() { e.actionSide = previous }()
+
 	p := &s.Party[i]
 	if p.Status[Confused] > 0 || p.Status[Puppet] > 0 {
 		return &UnsupportedError{Feature: "confusion/puppet status"}
@@ -569,6 +573,10 @@ func retarget(s Snapshot, begin int) int {
 }
 
 func (e *Engine) enemyAction(s *Snapshot, i int, r *Report) error {
+	previous := e.actionSide
+	e.actionSide = Enemy
+	defer func() { e.actionSide = previous }()
+
 	before := make([]uint16, len(s.Party))
 	for j, p := range s.Party {
 		before[j] = p.Role.HP

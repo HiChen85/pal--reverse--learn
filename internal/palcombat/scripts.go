@@ -76,6 +76,7 @@ func (e *Engine) runScript(s *Snapshot, request ScriptRequest, r *Report, next *
 			slot             int
 		}{x.Rewarded, x.TurnStart, x.BattleEnd, x.Ready, x.ObjectID, x.Slot}
 	}
+	request.Actor = e.actionSide
 	result, err := e.transaction.Run(request, s, scriptRandom{e, r, "script." + request.Hook})
 	r.Scripts = append(r.Scripts, result.Trace...)
 	if err != nil {
