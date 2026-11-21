@@ -55,7 +55,7 @@ func run(args []string, input io.Reader, out io.Writer) error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(out, "有效: %s; %d 人物 / %d 物品 / %d 节点\n", p.Title, len(p.Characters), len(p.Items), len(p.Nodes))
+		fmt.Fprintf(out, "有效: %s · %d 人物 / %d 物品 / %d 节点 / %d 地图\n", p.Title, len(p.Characters), len(p.Items), len(p.Nodes), len(p.Maps))
 		return nil
 	case "merge":
 		if len(args) != 4 {

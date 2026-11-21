@@ -23,6 +23,7 @@ type workbench struct {
 	nodeID, characterID, itemID, previewID string
 	jsonDraft                              string
 	enemyTarget, allyTarget, battleItem    string
+	maps                                   mapEditorState
 }
 
 func newWorkbench(p content.Pack) (*workbench, error) {
@@ -56,6 +57,7 @@ func (a *workbench) reloadDraft() {
 	if len(a.draft.Items) > 0 {
 		a.itemID = a.draft.Items[0].ID
 	}
+	a.resetMapSelection(a.maps.id)
 	a.refreshJSON()
 }
 func (a *workbench) refreshJSON() {
@@ -71,6 +73,7 @@ func (a *workbench) apply() error {
 		return err
 	}
 	a.dirty = false
+	a.maps.preview = nil
 	a.refreshJSON()
 	return nil
 }
@@ -92,6 +95,7 @@ func (a *workbench) applyJSON() error {
 	if len(p.Items) > 0 {
 		a.itemID = p.Items[0].ID
 	}
+	a.resetMapSelection(a.maps.id)
 	return nil
 }
 func (a *workbench) savePack() error {
@@ -178,7 +182,7 @@ func (a *workbench) view(c *ui.Context) {
 				ui.Text(c, state).FontSize(12).TextColor(t.TextMuted)
 			})
 		})
-		ui.Tabs(c, &a.tab, "剧情", "人物", "物品", "试玩", "完整 JSON", "原版数据").Padding(12, 22)
+		ui.Tabs(c, &a.tab, "剧情", "人物", "物品", "试玩", "完整 JSON", "原版数据", "地图").Padding(12, 22)
 		ui.Scroll(c).Grow(1).Children(func() {
 			ui.Column(c).Padding(8, 22, 22).Gap(12).FillWidth().Children(func() {
 				switch a.tab {
@@ -194,6 +198,8 @@ func (a *workbench) view(c *ui.Context) {
 					a.jsonEditor(c)
 				case 5:
 					a.originalView(c)
+				case 6:
+					a.mapEditor(c)
 				}
 			})
 		})
@@ -310,7 +316,7 @@ func (a *workbench) itemEditor(c *ui.Context) {
 	}
 }
 func (a *workbench) jsonEditor(c *ui.Context) {
-	ui.Text(c, "编辑完整内容包：章节、条件标记、战斗遭遇及敌人。同步按钮会用表单替换 JSON 草稿；载入按钮会用 JSON 替换表单草稿。载入后仍需校验并应用。").TextColor(c.Theme().TextMuted)
+	ui.Text(c, "编辑完整内容包：章节、地图、条件标记、战斗遭遇及敌人。同步按钮会用表单替换 JSON 草稿；载入按钮会用 JSON 替换表单草稿。载入后仍需校验并应用。").TextColor(c.Theme().TextMuted)
 	ui.Row(c).Gap(8).Children(func() {
 		if ui.Button(c, "将表单同步到 JSON").Clicked() {
 			a.refreshJSON()

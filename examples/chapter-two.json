@@ -108,5 +108,23 @@
       "text": "天黑前，最后一块桥板扣上缆索。闻禾把旧簿摊在渡棚里，过桥的人停下来，亲手在自家名字旁添上新住址。",
       "set_flags": {"river-crossing-restored": true}
     }
+  ],
+  "maps": [
+    {
+      "id": "river-bank",
+      "name": "渡口浅滩",
+      "rows": [
+        "########",
+        "#...#..#",
+        "#.#....#",
+        "#......#",
+        "########"
+      ],
+      "spawn": {"x": 1, "y": 1},
+      "events": [
+        {"position": {"x": 3, "y": 1}, "node": "river-arrival"},
+        {"position": {"x": 6, "y": 3}, "node": "river-sluice"}
+      ]
+    }
   ]
 }

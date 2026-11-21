@@ -31,6 +31,7 @@ type Pack struct {
 	Items         []Item      `json:"items"`
 	Encounters    []Encounter `json:"encounters"`
 	Nodes         []Node      `json:"nodes"`
+	Maps          []TileMap   `json:"maps,omitempty"`
 }
 type Character struct {
 	ID      string `json:"id"`
@@ -226,7 +227,7 @@ func (p Pack) Validate() error {
 			}
 		}
 	}
-	return nil
+	return validateMaps(p.Maps, nodes)
 }
 
 // Load reads a bounded, strict JSON document. Unknown fields and trailing JSON
@@ -407,7 +408,7 @@ func writePack(path string, p Pack) error {
 	return nil
 }
 
-// Clone returns an independent content graph, including flags and choices.
+// Clone returns independent content records, including flags, choices and maps.
 func Clone(p Pack) Pack {
 	out := p
 	out.Characters = append([]Character(nil), p.Characters...)
@@ -427,6 +428,7 @@ func Clone(p Pack) Pack {
 			out.Nodes[i].Choices[j].RequireFlags = cloneFlags(ch.RequireFlags)
 		}
 	}
+	out.Maps = cloneMaps(p.Maps)
 	return out
 }
 func cloneFlags(in map[string]bool) map[string]bool {
@@ -466,6 +468,7 @@ func Merge(base, extension Pack) (Pack, error) {
 	out.Items = append(out.Items, ext.Items...)
 	out.Encounters = append(out.Encounters, ext.Encounters...)
 	out.Nodes = append(out.Nodes, ext.Nodes...)
+	out.Maps = append(out.Maps, ext.Maps...)
 	if err := out.Validate(); err != nil {
 		return Pack{}, fmt.Errorf("merge: %w", err)
 	}
