@@ -1,0 +1,170 @@
+{
+  "reference": "SDLPAL d4bf69b64d335cd680555af9df90e7ec4f3006a3 fight.c numeric all-attack loop, native cc -O0; negative FLOAT to WORD is an implementation observation",
+  "cases": [
+    {
+      "attack": 50,
+      "hp": 1000,
+      "mask": 31,
+      "max_slot": 4,
+      "sweeps": 1,
+      "critical": false,
+      "expected_hp": [
+        992,
+        984,
+        969,
+        998,
+        996
+      ]
+    },
+    {
+      "attack": 50,
+      "hp": 1000,
+      "mask": 31,
+      "max_slot": 4,
+      "sweeps": 1,
+      "critical": true,
+      "expected_hp": [
+        976,
+        953,
+        907,
+        994,
+        988
+      ]
+    },
+    {
+      "attack": 50,
+      "hp": 1000,
+      "mask": 31,
+      "max_slot": 4,
+      "sweeps": 2,
+      "critical": false,
+      "expected_hp": [
+        984,
+        968,
+        938,
+        996,
+        992
+      ]
+    },
+    {
+      "attack": 50,
+      "hp": 1,
+      "mask": 31,
+      "max_slot": 4,
+      "sweeps": 2,
+      "critical": false,
+      "expected_hp": [
+        65522,
+        65506,
+        65475,
+        65535,
+        65530
+      ]
+    },
+    {
+      "attack": 16,
+      "hp": 100,
+      "mask": 31,
+      "max_slot": 4,
+      "sweeps": 1,
+      "critical": false,
+      "expected_hp": [
+        99,
+        99,
+        99,
+        99,
+        99
+      ]
+    },
+    {
+      "attack": 16,
+      "hp": 100,
+      "mask": 31,
+      "max_slot": 4,
+      "sweeps": 2,
+      "critical": false,
+      "expected_hp": [
+        98,
+        98,
+        98,
+        98,
+        98
+      ]
+    },
+    {
+      "attack": 50,
+      "hp": 1000,
+      "mask": 21,
+      "max_slot": 4,
+      "sweeps": 1,
+      "critical": false,
+      "expected_hp": [
+        984,
+        1000,
+        969,
+        1000,
+        992
+      ]
+    },
+    {
+      "attack": 50,
+      "hp": 1000,
+      "mask": 31,
+      "max_slot": 2,
+      "sweeps": 1,
+      "critical": false,
+      "expected_hp": [
+        992,
+        984,
+        969,
+        1000,
+        1000
+      ]
+    },
+    {
+      "attack": 50,
+      "hp": 1000,
+      "mask": 1,
+      "max_slot": 0,
+      "sweeps": 1,
+      "critical": true,
+      "expected_hp": [
+        907,
+        1000,
+        1000,
+        1000,
+        1000
+      ]
+    },
+    {
+      "attack": 50,
+      "hp": 1,
+      "mask": 21,
+      "max_slot": 4,
+      "sweeps": 2,
+      "critical": true,
+      "expected_hp": [
+        65444,
+        1,
+        65351,
+        1,
+        65490
+      ]
+    },
+    {
+      "attack": 32767,
+      "hp": 1,
+      "mask": 31,
+      "max_slot": 4,
+      "sweeps": 2,
+      "critical": true,
+      "expected_hp": [
+        65535,
+        65535,
+        65535,
+        65535,
+        65535
+      ]
+    }
+  ]
+}

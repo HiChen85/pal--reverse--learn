@@ -1,0 +1,1194 @@
+{
+  "camera": [
+    {
+      "name": "restore_display",
+      "operands": [
+        0,
+        0,
+        0
+      ],
+      "viewport": [
+        -169,
+        -109
+      ],
+      "offset": [
+        160,
+        112
+      ],
+      "positions": [
+        {
+          "x": 160,
+          "y": 112
+        },
+        {
+          "x": 32928,
+          "y": 32885
+        },
+        {
+          "x": 33029,
+          "y": 33080
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 0,
+      "displays": 1,
+      "delays": 0
+    },
+    {
+      "name": "restore_no_display",
+      "operands": [
+        0,
+        0,
+        65535
+      ],
+      "viewport": [
+        -169,
+        -109
+      ],
+      "offset": [
+        160,
+        112
+      ],
+      "positions": [
+        {
+          "x": 160,
+          "y": 112
+        },
+        {
+          "x": 32928,
+          "y": 32885
+        },
+        {
+          "x": 33029,
+          "y": 33080
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 0,
+      "displays": 0,
+      "delays": 0
+    },
+    {
+      "name": "absolute",
+      "operands": [
+        23,
+        19,
+        65535
+      ],
+      "viewport": [
+        576,
+        192
+      ],
+      "offset": [
+        -32760,
+        32760
+      ],
+      "positions": [
+        {
+          "x": 64951,
+          "y": 65347
+        },
+        {
+          "x": 32183,
+          "y": 32584
+        },
+        {
+          "x": 32284,
+          "y": 32779
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 0,
+      "displays": 1,
+      "delays": 1
+    },
+    {
+      "name": "absolute_unsigned_wrap",
+      "operands": [
+        65535,
+        32768,
+        65535
+      ],
+      "viewport": [
+        -192,
+        -112
+      ],
+      "offset": [
+        -32760,
+        32760
+      ],
+      "positions": [
+        {
+          "x": 183,
+          "y": 115
+        },
+        {
+          "x": 32951,
+          "y": 32888
+        },
+        {
+          "x": 33052,
+          "y": 33083
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 0,
+      "displays": 1,
+      "delays": 1
+    },
+    {
+      "name": "relative_signed",
+      "operands": [
+        65533,
+        4,
+        3
+      ],
+      "viewport": [
+        32751,
+        -32753
+      ],
+      "offset": [
+        -32751,
+        32748
+      ],
+      "positions": [
+        {
+          "x": 32776,
+          "y": 32756
+        },
+        {
+          "x": 8,
+          "y": 65529
+        },
+        {
+          "x": 109,
+          "y": 188
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 3,
+      "displays": 3,
+      "delays": 3
+    },
+    {
+      "name": "relative_wrap",
+      "operands": [
+        10,
+        65525,
+        2
+      ],
+      "viewport": [
+        -32756,
+        32749
+      ],
+      "offset": [
+        32756,
+        -32754
+      ],
+      "positions": [
+        {
+          "x": 32747,
+          "y": 32790
+        },
+        {
+          "x": 65515,
+          "y": 27
+        },
+        {
+          "x": 80,
+          "y": 222
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 2,
+      "displays": 2,
+      "delays": 2
+    },
+    {
+      "name": "relative_zero_repeat",
+      "operands": [
+        65535,
+        2,
+        0
+      ],
+      "viewport": [
+        32759,
+        -32763
+      ],
+      "offset": [
+        -32759,
+        32758
+      ],
+      "positions": [
+        {
+          "x": 32768,
+          "y": 32766
+        },
+        {
+          "x": 0,
+          "y": 3
+        },
+        {
+          "x": 101,
+          "y": 198
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 1,
+      "displays": 1,
+      "delays": 1
+    },
+    {
+      "name": "relative_negative_repeat",
+      "operands": [
+        65535,
+        2,
+        32768
+      ],
+      "viewport": [
+        32759,
+        -32763
+      ],
+      "offset": [
+        -32759,
+        32758
+      ],
+      "positions": [
+        {
+          "x": 32768,
+          "y": 32766
+        },
+        {
+          "x": 0,
+          "y": 3
+        },
+        {
+          "x": 101,
+          "y": 198
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 1,
+      "displays": 1,
+      "delays": 1
+    },
+    {
+      "name": "relative_minus_two_repeat",
+      "operands": [
+        65535,
+        2,
+        65534
+      ],
+      "viewport": [
+        32759,
+        -32763
+      ],
+      "offset": [
+        -32759,
+        32758
+      ],
+      "positions": [
+        {
+          "x": 32768,
+          "y": 32766
+        },
+        {
+          "x": 0,
+          "y": 3
+        },
+        {
+          "x": 101,
+          "y": 198
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 1,
+      "displays": 1,
+      "delays": 1
+    },
+    {
+      "name": "relative_extreme_delta",
+      "operands": [
+        32768,
+        32767,
+        1
+      ],
+      "viewport": [
+        -8,
+        2
+      ],
+      "offset": [
+        8,
+        -7
+      ],
+      "positions": [
+        {
+          "x": 65535,
+          "y": 1
+        },
+        {
+          "x": 32767,
+          "y": 32774
+        },
+        {
+          "x": 32868,
+          "y": 32969
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 1,
+      "displays": 1,
+      "delays": 1
+    },
+    {
+      "name": "relative_max_repeat",
+      "operands": [
+        1,
+        65535,
+        32767
+      ],
+      "viewport": [
+        -9,
+        4
+      ],
+      "offset": [
+        9,
+        -9
+      ],
+      "positions": [
+        {
+          "x": 0,
+          "y": 65535
+        },
+        {
+          "x": 32768,
+          "y": 32772
+        },
+        {
+          "x": 32869,
+          "y": 32967
+        },
+        {
+          "x": 300,
+          "y": 400
+        },
+        {
+          "x": 500,
+          "y": 600
+        }
+      ],
+      "updates": 32767,
+      "displays": 32767,
+      "delays": 32767
+    }
+  ],
+  "fade": [
+    {
+      "operand": 0,
+      "available": true,
+      "updates": 64,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 64,
+      "brightness": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ]
+    },
+    {
+      "operand": 1,
+      "available": true,
+      "updates": 64,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 64,
+      "brightness": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ]
+    },
+    {
+      "operand": 2,
+      "available": true,
+      "updates": 32,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 32,
+      "brightness": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20,
+        22,
+        24,
+        26,
+        28,
+        30,
+        32,
+        34,
+        36,
+        38,
+        40,
+        42,
+        44,
+        46,
+        48,
+        50,
+        52,
+        54,
+        56,
+        58,
+        60,
+        62
+      ]
+    },
+    {
+      "operand": 3,
+      "available": true,
+      "updates": 22,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 22,
+      "brightness": [
+        0,
+        3,
+        6,
+        9,
+        12,
+        15,
+        18,
+        21,
+        24,
+        27,
+        30,
+        33,
+        36,
+        39,
+        42,
+        45,
+        48,
+        51,
+        54,
+        57,
+        60,
+        63
+      ]
+    },
+    {
+      "operand": 4,
+      "available": true,
+      "updates": 16,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 16,
+      "brightness": [
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60
+      ]
+    },
+    {
+      "operand": 7,
+      "available": true,
+      "updates": 10,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 10,
+      "brightness": [
+        0,
+        7,
+        14,
+        21,
+        28,
+        35,
+        42,
+        49,
+        56,
+        63
+      ]
+    },
+    {
+      "operand": 63,
+      "available": true,
+      "updates": 2,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 2,
+      "brightness": [
+        0,
+        63
+      ]
+    },
+    {
+      "operand": 64,
+      "available": true,
+      "updates": 1,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 1,
+      "brightness": [
+        0
+      ]
+    },
+    {
+      "operand": 65,
+      "available": true,
+      "updates": 1,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 1,
+      "brightness": [
+        0
+      ]
+    },
+    {
+      "operand": 32767,
+      "available": true,
+      "updates": 1,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 1,
+      "brightness": [
+        0
+      ]
+    },
+    {
+      "operand": 65535,
+      "available": true,
+      "updates": 64,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 64,
+      "brightness": [
+        63,
+        62,
+        61,
+        60,
+        59,
+        58,
+        57,
+        56,
+        55,
+        54,
+        53,
+        52,
+        51,
+        50,
+        49,
+        48,
+        47,
+        46,
+        45,
+        44,
+        43,
+        42,
+        41,
+        40,
+        39,
+        38,
+        37,
+        36,
+        35,
+        34,
+        33,
+        32,
+        31,
+        30,
+        29,
+        28,
+        27,
+        26,
+        25,
+        24,
+        23,
+        22,
+        21,
+        20,
+        19,
+        18,
+        17,
+        16,
+        15,
+        14,
+        13,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "operand": 65534,
+      "available": true,
+      "updates": 32,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 32,
+      "brightness": [
+        63,
+        61,
+        59,
+        57,
+        55,
+        53,
+        51,
+        49,
+        47,
+        45,
+        43,
+        41,
+        39,
+        37,
+        35,
+        33,
+        31,
+        29,
+        27,
+        25,
+        23,
+        21,
+        19,
+        17,
+        15,
+        13,
+        11,
+        9,
+        7,
+        5,
+        3,
+        1
+      ]
+    },
+    {
+      "operand": 65533,
+      "available": true,
+      "updates": 22,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 22,
+      "brightness": [
+        63,
+        60,
+        57,
+        54,
+        51,
+        48,
+        45,
+        42,
+        39,
+        36,
+        33,
+        30,
+        27,
+        24,
+        21,
+        18,
+        15,
+        12,
+        9,
+        6,
+        3,
+        0
+      ]
+    },
+    {
+      "operand": 65529,
+      "available": true,
+      "updates": 10,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 10,
+      "brightness": [
+        63,
+        56,
+        49,
+        42,
+        35,
+        28,
+        21,
+        14,
+        7,
+        0
+      ]
+    },
+    {
+      "operand": 65473,
+      "available": true,
+      "updates": 2,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 2,
+      "brightness": [
+        63,
+        0
+      ]
+    },
+    {
+      "operand": 65472,
+      "available": true,
+      "updates": 1,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 1,
+      "brightness": [
+        63
+      ]
+    },
+    {
+      "operand": 65471,
+      "available": true,
+      "updates": 1,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 1,
+      "brightness": [
+        63
+      ]
+    },
+    {
+      "operand": 32768,
+      "available": true,
+      "updates": 1,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 1,
+      "brightness": [
+        63
+      ]
+    },
+    {
+      "operand": 0,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 1,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 2,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 3,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 4,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 7,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 63,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 64,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 32767,
+      "available": false,
+      "updates": 0,
+      "need_fade": false,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65535,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65534,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65533,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65529,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65473,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65472,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 65471,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    },
+    {
+      "operand": 32768,
+      "available": false,
+      "updates": 0,
+      "need_fade": true,
+      "need_during_update": false,
+      "clears": 0,
+      "brightness": []
+    }
+  ],
+  "reference": {
+    "repository": "https://github.com/sdlpal/sdlpal",
+    "commit": "d4bf69b64d335cd680555af9df90e7ec4f3006a3",
+    "camera_case_sha256": "8f4555e4526e39918fc771d10cf80300f9e43fd8ff822acd00089a38697345e3",
+    "scene_fade_function_sha256": "c6a05c685a793e1b04dac10b50da64b900b54db91b4b3fa925ee340c1171b1fe",
+    "method": "Trusted reference case 007F and PAL_SceneFade extracted to /tmp and compiled with state/counter/palette stubs. No APK or shipped library executed. Only derived synthetic results retained."
+  },
+  "initial_camera": {
+    "viewport": [
+      32760,
+      -32765
+    ],
+    "offset": [
+      -32760,
+      32760
+    ],
+    "party_count": 2,
+    "follower_count": 1,
+    "positions": [
+      {
+        "x": 32767,
+        "y": 32768
+      },
+      {
+        "x": 65535,
+        "y": 5
+      },
+      {
+        "x": 100,
+        "y": 200
+      },
+      {
+        "x": 300,
+        "y": 400
+      },
+      {
+        "x": 500,
+        "y": 600
+      }
+    ]
+  },
+  "initial_fade": {
+    "palette": 2,
+    "night": true,
+    "need_to_fade_in": true,
+    "color_0_red": 128,
+    "direction": 2,
+    "previous_direction": 3
+  }
+}

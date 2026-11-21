@@ -31,3 +31,26 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# PAL studio workspace
+/bin/
+/dist/
+*.sav.json
+*.mkf
+*.MKF
+/assets/original/
+/.cache/
+
+# Original data and local validation evidence (may contain game dialogue)
+*.msg
+*.MSG
+*.dat
+*.DAT
+/reports/
+/.local/
+*.trace.json
+
+# Python inspection helper caches
+__pycache__/
+*.py[cod]
+*.paltrace.json
